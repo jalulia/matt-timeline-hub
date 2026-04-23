@@ -113,6 +113,9 @@ export default function App(){
   const[loaded,setLoaded]=useState(false);
   const[sx,setSx]=useState(0);
   const[ppd,setPpd]=useState(16);
+  const[rail,setRail]=useState(()=>{try{const v=parseInt(localStorage.getItem("tl.rail")||"",10);if(!isNaN(v))return clamp(v,RAIL_MIN,RAIL_MAX);}catch(e){}return RAIL_DEFAULT;});
+  useEffect(()=>{try{localStorage.setItem("tl.rail",String(rail));}catch(e){}if(cRef.current)vw.current=cRef.current.offsetWidth-rail;},[rail]);
+  const railDrag=useRef(null);
   const[sel,setSel]=useState(null);
   const[ed,setEd]=useState(null);
   const[popup,setPopup]=useState(null);
