@@ -207,12 +207,13 @@ export default function App(){
   const onWheel=useCallback(e=>{if(e.metaKey||e.ctrlKey){e.preventDefault();const r=cRef.current.getBoundingClientRect();const mx=e.clientX-r.left-RAIL;const db=toDate(mx);const f=e.deltaY>0?.92:1.08;const np=clamp(ppd*f,1.5,60);setSx(((db-ORIGIN)/MS_DAY)*np-mx);setPpd(np);}else setSx(p=>p+e.deltaX+e.deltaY*.5);},[ppd,toDate]);
 
   const gid=el=>({id:el.dataset.id,pid:el.dataset.pid,tid:el.dataset.tid});
-  const startMilestoneDrag=useCallback((e,id,sc="g")=>{
+  const startMilestoneDrag=useCallback((e,id,date,sc="g")=>{
     if(e.button!==0)return;
+    e.preventDefault();
     e.stopPropagation();
     const next={type:"ms",id,sc};
     setSel(next);
-    dr.current={type:"mms",...next,x0:e.clientX};
+    dr.current={type:"mms",...next,x0:e.clientX,od:date};
     try{e.currentTarget.setPointerCapture?.(e.pointerId);}catch{}
   },[]);
 
@@ -233,7 +234,7 @@ export default function App(){
     if(d.type==="cr"){const r=cRef.current.getBoundingClientRect();d.c=snap(toDate(e.clientX-r.left-RAIL));setPv({pid:d.pid,tid:d.tid,s:Math.min(d.s,d.c),e:Math.max(d.s,d.c)});return;}
     if(d.type==="mph"){const dd=Math.round(dx/ppd);mut(D=>{const tr=D.projects.find(p=>p.id===d.pid)?.tracks.find(t=>t.id===d.tid);const ph=tr?.phases.find(p=>p.id===d.id);if(!ph)return;if(!d.os){d.os=ph.start;d.oe=ph.end;}ph.start=d.os+dd*MS_DAY;ph.end=d.oe+dd*MS_DAY;});return;}
     if(d.type==="rl"||d.type==="rr"){const dd=Math.round(dx/ppd);mut(D=>{const tr=D.projects.find(p=>p.id===d.pid)?.tracks.find(t=>t.id===d.tid);const ph=tr?.phases.find(p=>p.id===d.id);if(!ph)return;if(!d.os){d.os=ph.start;d.oe=ph.end;}if(d.type==="rl")ph.start=Math.min(d.os+dd*MS_DAY,d.oe-MS_DAY);else ph.end=Math.max(d.oe+dd*MS_DAY,d.os+MS_DAY);});return;}
-    if(d.type==="mms"){const dd=Math.round(dx/ppd);mut(D=>{const ms=D.milestones.find(m=>m.id===d.id);if(!ms)return;if(!d.od)d.od=ms.date;ms.date=d.od+dd*MS_DAY;});return;}
+    if(d.type==="mms"){const r=cRef.current.getBoundingClientRect();const nextDate=snap(toDate(e.clientX-r.left-RAIL));mut(D=>{const ms=D.milestones.find(m=>m.id===d.id);if(!ms)return;ms.date=nextDate;});return;}
   },[ppd,toDate,mut]);
 
   const onUp=useCallback(()=>{const d=dr.current;
@@ -400,7 +401,7 @@ export default function App(){
             const x=toX(ms.date);if(x<-100||x>(vw.current||1200)+100)return null;
             const row=msS.rowFor.get(ms.id)||0;const isSel=sel?.type==="ms"&&sel.id===ms.id;const isEd=ed?.type==="ms"&&ed.id===ms.id;
             return(<div key={ms.id} data-r="ms" data-id={ms.id} data-sc="g"
-              onPointerDown={e=>{if(!isEd)startMilestoneDrag(e,ms.id,"g");}}
+              onPointerDown={e=>{if(!isEd)startMilestoneDrag(e,ms.id,ms.date,"g");}}
               onDoubleClick={e=>{e.stopPropagation();if(!isEd)setEd({type:"ms",id:ms.id});}}
               onDragStart={e=>e.preventDefault()}
               style={{position:"absolute",left:x-12,top:10+row*32,display:"flex",alignItems:"center",gap:8,cursor:isEd?"text":"grab",zIndex:isSel?10:1,height:24,whiteSpace:"nowrap",padding:"6px 12px 6px 8px",margin:"-6px -12px -6px -8px",borderRadius:6,touchAction:"none"}}>
