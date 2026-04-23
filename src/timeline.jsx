@@ -118,9 +118,11 @@ export default function App(){
   const[clock,setClock]=useState("");
   const[saveStatus,setSaveStatus]=useState("");
   const[showMenu,setShowMenu]=useState(false);
+  const[msDel,setMsDel]=useState(0);
   const cRef=useRef(null);const dr=useRef(null);const vw=useRef(1200);const saveTimer=useRef(null);
   const sideRef=useRef(null);const laneRef=useRef(null);const scrollLock=useRef(false);
   const skipNextSave=useRef(false);
+  useEffect(()=>{setMsDel(0);},[sel?.id]);
 
   /* ─── Undo/Redo ─── */
   const history=useRef([]);const future=useRef([]);const MAX_HIST=50;
@@ -345,7 +347,7 @@ export default function App(){
                 </div>
               ))}
 
-              <div style={{position:"absolute",bottom:2,left:32,right:8}}>
+              <div style={{position:"absolute",bottom:8,left:32,right:8}}>
                 <span style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#C5C2BC",cursor:"pointer",letterSpacing:"0.05em",fontWeight:500}}
                   onClick={()=>{const id=uid();mut(d=>{const p=d.projects.find(pp=>pp.id===proj.id);if(p)p.tracks.push({id,name:"",phases:[]});});setPopup({type:"trk",pid:proj.id,tid:id});}}
                   onMouseEnter={e=>e.currentTarget.style.color=IO} onMouseLeave={e=>e.currentTarget.style.color="#C5C2BC"}>+ track</span>
@@ -497,6 +499,15 @@ export default function App(){
           <input type="color" value={ms.color||IO}
             onChange={e=>mut(d=>{const m=d.milestones.find(mm=>mm.id===sel.id);if(m)m.color=e.target.value;})}
             style={{width:22,height:18,border:"none",padding:0,cursor:"pointer",borderRadius:2,background:"none"}}/>
+          <div style={{width:1,height:16,background:"#E8E6E1",margin:"0 2px"}}/>
+          {msDel===0?(
+            <span onClick={()=>setMsDel(1)}
+              onMouseEnter={e=>e.currentTarget.style.color=IO} onMouseLeave={e=>e.currentTarget.style.color="#C5C2BC"}
+              style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#C5C2BC",letterSpacing:"0.05em",fontWeight:500,cursor:"pointer",marginLeft:4,paddingLeft:4,textTransform:"uppercase"}}>Delete</span>
+          ):(
+            <span onClick={()=>{mut(d=>{d.milestones=d.milestones.filter(m=>m.id!==sel.id);});setSel(null);setMsDel(0);}}
+              style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:IO,letterSpacing:"0.05em",fontWeight:600,cursor:"pointer",marginLeft:4,paddingLeft:4,textTransform:"uppercase"}}>Confirm?</span>
+          )}
         </div>);
       })()}
     </div>
