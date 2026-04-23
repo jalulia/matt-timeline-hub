@@ -234,7 +234,7 @@ export default function App(){
     const t=e.target.closest("[data-r]");const ro=t?.dataset.r;
     if(ro==="phl"||ro==="phr"){dr.current={type:ro==="phl"?"rl":"rr",...gid(t),x0:e.clientX};return e.stopPropagation();}
     if(ro==="ph"){setSel({type:"ph",...gid(t)});dr.current={type:"mph",...gid(t),x0:e.clientX};return e.stopPropagation();}
-    if(ro==="ms")return;
+    if(ro==="ms"){e.stopPropagation();return;}
     if(ro==="tbg"){const s=snap(toDate(x));dr.current={type:"cr",pid:t.dataset.pid,tid:t.dataset.tid,s,c:s,x0:e.clientX};setSel(null);return e.stopPropagation();}
     if(ro==="mbg"){const dt=snap(toDate(x));const id=uid();mut(d=>d.milestones.push({id,name:"Milestone",date:dt}));setEd({type:"ms",id});setSel({type:"ms",id,sc:"g"});return;}
     dr.current={type:"pan",x0:e.clientX,sx0:sx};setSel(null);setPopup(null);setShowMenu(false);
@@ -250,7 +250,8 @@ export default function App(){
   const onUp=useCallback(()=>{const d=dr.current;
     if(d?.type==="cr"){const s=Math.min(d.s,d.c),en=Math.max(d.s,d.c);if(en-s>=MS_DAY*.5){const id=uid();mut(D=>{const tr=D.projects.find(p=>p.id===d.pid)?.tracks.find(t=>t.id===d.tid);if(tr)tr.phases.push({id,name:"",start:s,end:Math.max(en,s+MS_DAY),style:0});});setEd({type:"ph",id,pid:d.pid,tid:d.tid});setSel({type:"ph",id,pid:d.pid,tid:d.tid});}}
     dr.current=null;setPv(null);
-  },[mut]);
+    stopMilestoneDrag();
+  },[mut,stopMilestoneDrag]);
 
   useEffect(()=>{
     window.addEventListener("pointermove",onMove);
