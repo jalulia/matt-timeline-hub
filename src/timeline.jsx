@@ -4,7 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 const DOC_ID = "shared";
 
 const MS_DAY = 864e5;
-const RAIL = 240;
+const RAIL_DEFAULT = 240;
+const RAIL_MIN = 180;
+const RAIL_MAX = 520;
 const HEAD = 48;
 const RULER_H = 60;
 const AXIS_H = 6;
@@ -45,7 +47,7 @@ function getVis(si,tc,phc){
 }
 
 function stackRows(ph){const s=[...ph].sort((a,b)=>a.start-b.start||(a.end-a.start)-(b.end-b.start));const ends=[],map=new Map();s.forEach(p=>{let r=0;while(r<ends.length&&ends[r]>p.start)r++;ends[r]=p.end;map.set(p.id,r);});return{rowFor:map,count:Math.max(1,ends.length)};}
-function stackMs(ms,toX){const s=[...ms].sort((a,b)=>a.date-b.date);const ends=[],map=new Map();s.forEach(m=>{const x=toX(m.date);let r=0;while(r<ends.length&&ends[r]>=x-4)r++;ends[r]=x+90;map.set(m.id,r);});return{rowFor:map,count:Math.max(1,ends.length)};}
+function stackMs(ms,toX,widthFor){const s=[...ms].sort((a,b)=>a.date-b.date);const ends=[],map=new Map();s.forEach(m=>{const x=toX(m.date);const w=widthFor?widthFor(m):90;let r=0;while(r<ends.length&&ends[r]>=x-4)r++;ends[r]=x+w+8;map.set(m.id,r);});return{rowFor:map,count:Math.max(1,ends.length)};}
 
 const SEED={milestones:[
   {id:uid(),name:"CL cutoff",date:new Date(2026,3,24).getTime()},
