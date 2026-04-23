@@ -118,6 +118,7 @@ export default function App(){
   const[clock,setClock]=useState("");
   const[saveStatus,setSaveStatus]=useState("");
   const[showMenu,setShowMenu]=useState(false);
+  const[msDel,setMsDel]=useState(0);
   const cRef=useRef(null);const dr=useRef(null);const vw=useRef(1200);const saveTimer=useRef(null);
   const sideRef=useRef(null);const laneRef=useRef(null);const scrollLock=useRef(false);
   const skipNextSave=useRef(false);
