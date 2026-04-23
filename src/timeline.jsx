@@ -122,6 +122,7 @@ export default function App(){
   const cRef=useRef(null);const dr=useRef(null);const vw=useRef(1200);const saveTimer=useRef(null);
   const sideRef=useRef(null);const laneRef=useRef(null);const scrollLock=useRef(false);
   const skipNextSave=useRef(false);
+  useEffect(()=>{setMsDel(0);},[sel?.id]);
 
   /* ─── Undo/Redo ─── */
   const history=useRef([]);const future=useRef([]);const MAX_HIST=50;
