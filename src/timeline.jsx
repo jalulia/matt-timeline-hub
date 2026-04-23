@@ -401,7 +401,7 @@ export default function App(){
             const x=toX(ms.date);if(x<-100||x>(vw.current||1200)+100)return null;
             const row=msS.rowFor.get(ms.id)||0;const isSel=sel?.type==="ms"&&sel.id===ms.id;const isEd=ed?.type==="ms"&&ed.id===ms.id;
             return(<div key={ms.id} data-r="ms" data-id={ms.id} data-sc="g"
-              onPointerDown={e=>{if(!isEd)startMilestoneDrag(e,ms.id,"g");}}
+              onPointerDown={e=>{if(!isEd)startMilestoneDrag(e,ms.id,ms.date,"g");}}
               onDoubleClick={e=>{e.stopPropagation();if(!isEd)setEd({type:"ms",id:ms.id});}}
               onDragStart={e=>e.preventDefault()}
               style={{position:"absolute",left:x-12,top:10+row*32,display:"flex",alignItems:"center",gap:8,cursor:isEd?"text":"grab",zIndex:isSel?10:1,height:24,whiteSpace:"nowrap",padding:"6px 12px 6px 8px",margin:"-6px -12px -6px -8px",borderRadius:6,touchAction:"none"}}>
