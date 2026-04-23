@@ -207,13 +207,13 @@ export default function App(){
   const onWheel=useCallback(e=>{if(e.metaKey||e.ctrlKey){e.preventDefault();const r=cRef.current.getBoundingClientRect();const mx=e.clientX-r.left-RAIL;const db=toDate(mx);const f=e.deltaY>0?.92:1.08;const np=clamp(ppd*f,1.5,60);setSx(((db-ORIGIN)/MS_DAY)*np-mx);setPpd(np);}else setSx(p=>p+e.deltaX+e.deltaY*.5);},[ppd,toDate]);
 
   const gid=el=>({id:el.dataset.id,pid:el.dataset.pid,tid:el.dataset.tid});
-  const startMilestoneDrag=useCallback((e,id,date,sc="g")=>{
+  const startMilestoneDrag=useCallback((e,id,sc="g")=>{
     if(e.button!==0)return;
     e.preventDefault();
     e.stopPropagation();
     const next={type:"ms",id,sc};
     setSel(next);
-    dr.current={type:"mms",...next,x0:e.clientX,od:date};
+    dr.current={type:"mms",...next,x0:e.clientX};
     try{e.currentTarget.setPointerCapture?.(e.pointerId);}catch{}
   },[]);
 
@@ -223,7 +223,7 @@ export default function App(){
     const t=e.target.closest("[data-r]");const ro=t?.dataset.r;
     if(ro==="phl"||ro==="phr"){dr.current={type:ro==="phl"?"rl":"rr",...gid(t),x0:e.clientX};return e.stopPropagation();}
     if(ro==="ph"){setSel({type:"ph",...gid(t)});dr.current={type:"mph",...gid(t),x0:e.clientX};return e.stopPropagation();}
-    if(ro==="ms"){const o={type:"ms",id:t.dataset.id,sc:t.dataset.sc};setSel(o);dr.current={type:"mms",...o,x0:e.clientX};return e.stopPropagation();}
+    if(ro==="ms")return;
     if(ro==="tbg"){const s=snap(toDate(x));dr.current={type:"cr",pid:t.dataset.pid,tid:t.dataset.tid,s,c:s,x0:e.clientX};setSel(null);return e.stopPropagation();}
     if(ro==="mbg"){const dt=snap(toDate(x));const id=uid();mut(d=>d.milestones.push({id,name:"Milestone",date:dt}));setEd({type:"ms",id});setSel({type:"ms",id,sc:"g"});return;}
     dr.current={type:"pan",x0:e.clientX,sx0:sx};setSel(null);setPopup(null);setShowMenu(false);
@@ -242,7 +242,18 @@ export default function App(){
     dr.current=null;setPv(null);
   },[mut]);
 
-  useEffect(()=>{window.addEventListener("pointermove",onMove);window.addEventListener("pointerup",onUp);return()=>{window.removeEventListener("pointermove",onMove);window.removeEventListener("pointerup",onUp);};},[onMove,onUp]);
+  useEffect(()=>{
+    window.addEventListener("pointermove",onMove);
+    window.addEventListener("pointerup",onUp);
+    window.addEventListener("mousemove",onMove);
+    window.addEventListener("mouseup",onUp);
+    return()=>{
+      window.removeEventListener("pointermove",onMove);
+      window.removeEventListener("pointerup",onUp);
+      window.removeEventListener("mousemove",onMove);
+      window.removeEventListener("mouseup",onUp);
+    };
+  },[onMove,onUp]);
 
   useEffect(()=>{const fn=e=>{
     if(e.key==="z"&&(e.metaKey||e.ctrlKey)&&!e.shiftKey){e.preventDefault();undo();return;}
