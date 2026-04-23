@@ -420,7 +420,7 @@ export default function App(){
       </div>
 
       {/* TIMELINE */}
-      <div style={{position:"absolute",top:HEAD,left:RAIL,right:0,bottom:0,overflow:"hidden"}}>
+      <div style={{position:"absolute",top:HEAD,left:rail,right:0,bottom:0,overflow:"hidden"}}>
         {todayX>-2&&todayX<(vw.current||1200)+2&&(
           <div style={{position:"absolute",top:0,bottom:0,left:todayX,width:1.5,background:IO,opacity:.7,zIndex:6,pointerEvents:"none"}}>
             <div style={{position:"absolute",top:-1,left:-3,width:8,height:8,background:IO,borderRadius:"50%"}}/>
