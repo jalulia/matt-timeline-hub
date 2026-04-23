@@ -207,6 +207,14 @@ export default function App(){
   const onWheel=useCallback(e=>{if(e.metaKey||e.ctrlKey){e.preventDefault();const r=cRef.current.getBoundingClientRect();const mx=e.clientX-r.left-RAIL;const db=toDate(mx);const f=e.deltaY>0?.92:1.08;const np=clamp(ppd*f,1.5,60);setSx(((db-ORIGIN)/MS_DAY)*np-mx);setPpd(np);}else setSx(p=>p+e.deltaX+e.deltaY*.5);},[ppd,toDate]);
 
   const gid=el=>({id:el.dataset.id,pid:el.dataset.pid,tid:el.dataset.tid});
+  const startMilestoneDrag=useCallback((e,id,sc="g")=>{
+    if(e.button!==0)return;
+    e.stopPropagation();
+    const next={type:"ms",id,sc};
+    setSel(next);
+    dr.current={type:"mms",...next,x0:e.clientX};
+    try{e.currentTarget.setPointerCapture?.(e.pointerId);}catch{}
+  },[]);
 
   const onDown=useCallback(e=>{
     if(e.button!==0)return;const r=cRef.current.getBoundingClientRect();const x=e.clientX-r.left-RAIL;
@@ -391,7 +399,10 @@ export default function App(){
           {data.milestones.map(ms=>{
             const x=toX(ms.date);if(x<-100||x>(vw.current||1200)+100)return null;
             const row=msS.rowFor.get(ms.id)||0;const isSel=sel?.type==="ms"&&sel.id===ms.id;const isEd=ed?.type==="ms"&&ed.id===ms.id;
-            return(<div key={ms.id} data-r="ms" data-id={ms.id} data-sc="g" onDoubleClick={e=>{e.stopPropagation();if(!isEd)setEd({type:"ms",id:ms.id});}}
+            return(<div key={ms.id} data-r="ms" data-id={ms.id} data-sc="g"
+              onPointerDown={e=>{if(!isEd)startMilestoneDrag(e,ms.id,"g");}}
+              onDoubleClick={e=>{e.stopPropagation();if(!isEd)setEd({type:"ms",id:ms.id});}}
+              onDragStart={e=>e.preventDefault()}
               style={{position:"absolute",left:x-12,top:10+row*32,display:"flex",alignItems:"center",gap:8,cursor:isEd?"text":"grab",zIndex:isSel?10:1,height:24,whiteSpace:"nowrap",padding:"6px 12px 6px 8px",margin:"-6px -12px -6px -8px",borderRadius:6,touchAction:"none"}}>
               <div style={{width:10,height:10,transform:"rotate(45deg)",flexShrink:0,background:isSel?(ms.color||IO):BG,border:`1.5px solid ${ms.color||IO}`,boxShadow:isSel?`0 0 0 3px ${IO_LIGHT}`:"none",pointerEvents:"none"}}/>
               {isEd?(<Edit value={ms.name} onDone={v=>{mut(d=>{const m=d.milestones.find(mm=>mm.id===ms.id);if(m)m.name=v;});setEd(null);}} style={{fontFamily:"'Geist Mono',monospace",fontSize:12,width:110}}/>
