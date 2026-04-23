@@ -332,12 +332,12 @@ export default function App(){
           <span style={{fontFamily:"'Geist Mono',monospace",fontSize:11,color:"#8A8780",letterSpacing:"0.05em"}}>{clock}</span>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <button onClick={()=>{const w=(cRef.current?.offsetWidth||1400)-RAIL;setSx(((todayTs()-ORIGIN)/MS_DAY)*ppd-w/3);}}
+          <button onClick={()=>{const w=(cRef.current?.offsetWidth||1400)-rail;setSx(((todayTs()-ORIGIN)/MS_DAY)*ppd-w/3);}}
             style={{fontFamily:"'Geist Mono',monospace",fontSize:10,letterSpacing:"0.07em",textTransform:"uppercase",color:"#8A8780",background:"none",border:"1px solid #E0DDD7",padding:"5px 14px",cursor:"pointer",borderRadius:3,fontWeight:500}}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=IO;e.currentTarget.style.color=IO;}} onMouseLeave={e=>{e.currentTarget.style.borderColor="#E0DDD7";e.currentTarget.style.color="#8A8780";}}>Today</button>
           <div style={{display:"inline-flex",border:"1px solid #E0DDD7",borderRadius:3,overflow:"hidden"}}>
             {[{l:"D",v:28},{l:"W",v:14},{l:"M",v:5},{l:"Q",v:2}].map(z=>(
-              <button key={z.l} onClick={()=>{const w=(cRef.current?.offsetWidth||1400)-RAIL;const cx=w/2;const dm=toDate(cx);setSx(((dm-ORIGIN)/MS_DAY)*z.v-cx);setPpd(z.v);}}
+              <button key={z.l} onClick={()=>{const w=(cRef.current?.offsetWidth||1400)-rail;const cx=w/2;const dm=toDate(cx);setSx(((dm-ORIGIN)/MS_DAY)*z.v-cx);setPpd(z.v);}}
                 style={{fontFamily:"'Geist Mono',monospace",fontSize:10,textTransform:"uppercase",
                   color:Math.abs(ppd-z.v)<1?"#fff":"#8A8780",background:Math.abs(ppd-z.v)<1?"#1A1A1A":"transparent",
                   padding:"5px 11px",border:"none",borderRight:"1px solid #E0DDD7",cursor:"pointer",fontWeight:500}}>{z.l}</button>))}
