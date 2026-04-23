@@ -204,21 +204,21 @@ export default function App(){
 
   useEffect(()=>{if(!document.getElementById("tf")){const l=document.createElement("link");l.id="tf";l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap";document.head.appendChild(l);}},[]);
   useEffect(()=>{const tick=()=>{const n=new Date();setClock(`${MONTHS[n.getMonth()]} ${n.getDate()}, ${n.getFullYear()}  ${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`);};tick();const iv=setInterval(tick,30000);return()=>clearInterval(iv);},[]);
-  useEffect(()=>{const m=()=>{if(cRef.current)vw.current=cRef.current.offsetWidth-RAIL;};m();window.addEventListener("resize",m);return()=>window.removeEventListener("resize",m);},[]);
-  useEffect(()=>{if(cRef.current){const w=cRef.current.offsetWidth-RAIL;setSx(((todayTs()-ORIGIN)/MS_DAY)*ppd-w/3);}},[]);
+  useEffect(()=>{const m=()=>{if(cRef.current)vw.current=cRef.current.offsetWidth-rail;};m();window.addEventListener("resize",m);return()=>window.removeEventListener("resize",m);},[rail]);
+  useEffect(()=>{if(cRef.current){const w=cRef.current.offsetWidth-rail;setSx(((todayTs()-ORIGIN)/MS_DAY)*ppd-w/3);}},[]);
 
   const toX=useCallback(ts=>((ts-ORIGIN)/MS_DAY)*ppd-sx,[sx,ppd]);
   const toDate=useCallback(x=>((x+sx)/ppd)*MS_DAY+ORIGIN,[sx,ppd]);
 
-  const onWheel=useCallback(e=>{if(e.metaKey||e.ctrlKey){e.preventDefault();const r=cRef.current.getBoundingClientRect();const mx=e.clientX-r.left-RAIL;const db=toDate(mx);const f=e.deltaY>0?.92:1.08;const np=clamp(ppd*f,1.5,60);setSx(((db-ORIGIN)/MS_DAY)*np-mx);setPpd(np);}else setSx(p=>p+e.deltaX+e.deltaY*.5);},[ppd,toDate]);
+  const onWheel=useCallback(e=>{if(e.metaKey||e.ctrlKey){e.preventDefault();const r=cRef.current.getBoundingClientRect();const mx=e.clientX-r.left-rail;const db=toDate(mx);const f=e.deltaY>0?.92:1.08;const np=clamp(ppd*f,1.5,60);setSx(((db-ORIGIN)/MS_DAY)*np-mx);setPpd(np);}else setSx(p=>p+e.deltaX+e.deltaY*.5);},[ppd,toDate,rail]);
 
   const gid=el=>({id:el.dataset.id,pid:el.dataset.pid,tid:el.dataset.tid});
   const moveMilestoneToClientX=useCallback((clientX,id)=>{
     const rect=cRef.current?.getBoundingClientRect();
     if(!rect)return;
-    const nextDate=snap(toDate(clientX-rect.left-RAIL));
+    const nextDate=snap(toDate(clientX-rect.left-rail));
     mut(d=>{const ms=d.milestones.find(m=>m.id===id);if(ms)ms.date=nextDate;});
-  },[toDate,mut]);
+  },[toDate,mut,rail]);
 
   const stopMilestoneDrag=useCallback(()=>{
     msDrag.current=null;
@@ -234,7 +234,7 @@ export default function App(){
   },[]);
 
   const onDown=useCallback(e=>{
-    if(e.button!==0)return;const r=cRef.current.getBoundingClientRect();const x=e.clientX-r.left-RAIL;
+    if(e.button!==0)return;const r=cRef.current.getBoundingClientRect();const x=e.clientX-r.left-rail;
     if(x<0)return;
     const t=e.target.closest("[data-r]");const ro=t?.dataset.r;
     if(ro==="phl"||ro==="phr"){dr.current={type:ro==="phl"?"rl":"rr",...gid(t),x0:e.clientX};return e.stopPropagation();}
@@ -243,14 +243,14 @@ export default function App(){
     if(ro==="tbg"){const s=snap(toDate(x));dr.current={type:"cr",pid:t.dataset.pid,tid:t.dataset.tid,s,c:s,x0:e.clientX};setSel(null);return e.stopPropagation();}
     if(ro==="mbg"){const dt=snap(toDate(x));const id=uid();mut(d=>d.milestones.push({id,name:"Milestone",date:dt}));setEd({type:"ms",id});setSel({type:"ms",id,sc:"g"});return;}
     dr.current={type:"pan",x0:e.clientX,sx0:sx};setSel(null);setPopup(null);setShowMenu(false);
-  },[sx,ppd,toDate,mut]);
+  },[sx,ppd,toDate,mut,rail]);
 
   const onMove=useCallback(e=>{const d=dr.current;if(!d)return;const dx=e.clientX-d.x0;
     if(d.type==="pan")return setSx(d.sx0-dx);
-    if(d.type==="cr"){const r=cRef.current.getBoundingClientRect();d.c=snap(toDate(e.clientX-r.left-RAIL));setPv({pid:d.pid,tid:d.tid,s:Math.min(d.s,d.c),e:Math.max(d.s,d.c)});return;}
+    if(d.type==="cr"){const r=cRef.current.getBoundingClientRect();d.c=snap(toDate(e.clientX-r.left-rail));setPv({pid:d.pid,tid:d.tid,s:Math.min(d.s,d.c),e:Math.max(d.s,d.c)});return;}
     if(d.type==="mph"){const dd=Math.round(dx/ppd);mut(D=>{const tr=D.projects.find(p=>p.id===d.pid)?.tracks.find(t=>t.id===d.tid);const ph=tr?.phases.find(p=>p.id===d.id);if(!ph)return;if(!d.os){d.os=ph.start;d.oe=ph.end;}ph.start=d.os+dd*MS_DAY;ph.end=d.oe+dd*MS_DAY;});return;}
     if(d.type==="rl"||d.type==="rr"){const dd=Math.round(dx/ppd);mut(D=>{const tr=D.projects.find(p=>p.id===d.pid)?.tracks.find(t=>t.id===d.tid);const ph=tr?.phases.find(p=>p.id===d.id);if(!ph)return;if(!d.os){d.os=ph.start;d.oe=ph.end;}if(d.type==="rl")ph.start=Math.min(d.os+dd*MS_DAY,d.oe-MS_DAY);else ph.end=Math.max(d.oe+dd*MS_DAY,d.os+MS_DAY);});return;}
-  },[ppd,toDate,mut]);
+  },[ppd,toDate,mut,rail]);
 
   const onUp=useCallback(()=>{const d=dr.current;
     if(d?.type==="cr"){const s=Math.min(d.s,d.c),en=Math.max(d.s,d.c);if(en-s>=MS_DAY*.5){const id=uid();mut(D=>{const tr=D.projects.find(p=>p.id===d.pid)?.tracks.find(t=>t.id===d.tid);if(tr)tr.phases.push({id,name:"",start:s,end:Math.max(en,s+MS_DAY),style:0});});setEd({type:"ph",id,pid:d.pid,tid:d.tid});setSel({type:"ph",id,pid:d.pid,tid:d.tid});}}
