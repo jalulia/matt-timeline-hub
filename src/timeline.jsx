@@ -345,7 +345,7 @@ export default function App(){
                 </div>
               ))}
 
-              <div style={{position:"absolute",bottom:2,left:32,right:8}}>
+              <div style={{position:"absolute",bottom:8,left:32,right:8}}>
                 <span style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#C5C2BC",cursor:"pointer",letterSpacing:"0.05em",fontWeight:500}}
                   onClick={()=>{const id=uid();mut(d=>{const p=d.projects.find(pp=>pp.id===proj.id);if(p)p.tracks.push({id,name:"",phases:[]});});setPopup({type:"trk",pid:proj.id,tid:id});}}
                   onMouseEnter={e=>e.currentTarget.style.color=IO} onMouseLeave={e=>e.currentTarget.style.color="#C5C2BC"}>+ track</span>
