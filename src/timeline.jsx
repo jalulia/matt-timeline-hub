@@ -498,6 +498,15 @@ export default function App(){
           <input type="color" value={ms.color||IO}
             onChange={e=>mut(d=>{const m=d.milestones.find(mm=>mm.id===sel.id);if(m)m.color=e.target.value;})}
             style={{width:22,height:18,border:"none",padding:0,cursor:"pointer",borderRadius:2,background:"none"}}/>
+          <div style={{width:1,height:16,background:"#E8E6E1",margin:"0 2px"}}/>
+          {msDel===0?(
+            <span onClick={()=>setMsDel(1)}
+              onMouseEnter={e=>e.currentTarget.style.color=IO} onMouseLeave={e=>e.currentTarget.style.color="#C5C2BC"}
+              style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#C5C2BC",letterSpacing:"0.05em",fontWeight:500,cursor:"pointer",marginLeft:4,paddingLeft:4,textTransform:"uppercase"}}>Delete</span>
+          ):(
+            <span onClick={()=>{mut(d=>{d.milestones=d.milestones.filter(m=>m.id!==sel.id);});setSel(null);setMsDel(0);}}
+              style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:IO,letterSpacing:"0.05em",fontWeight:600,cursor:"pointer",marginLeft:4,paddingLeft:4,textTransform:"uppercase"}}>Confirm?</span>
+          )}
         </div>);
       })()}
     </div>
