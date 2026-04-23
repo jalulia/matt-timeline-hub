@@ -351,8 +351,9 @@ export default function App(){
 
       {/* SIDEBAR */}
       <div style={{position:"absolute",top:HEAD,left:0,width:RAIL,bottom:0,borderRight:"1px solid #E0DDD7",zIndex:10,background:SIDE_BG,display:"flex",flexDirection:"column"}} onPointerDown={e=>e.stopPropagation()}>
-        <div style={{height:RULER_H+AXIS_H,borderBottom:"1px solid #E0DDD7",display:"flex",alignItems:"flex-end",justifyContent:"flex-end",padding:"0 20px 8px"}}>
-          <span style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#A09E98",letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:500}}>{ppd>15?"Days":ppd>6?"Weeks":"Months"}</span>
+        <div>
+          <div style={{height:RULER_H,background:BG}} />
+          <div style={{height:AXIS_H,borderBottom:"1px solid #1A1A1A",background:BG}} />
         </div>
         <div style={{height:msH,borderBottom:"1px solid #E0DDD7",display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"0 20px"}}>
           <span style={{fontFamily:"'Geist Mono',monospace",fontSize:9.5,color:"#A09E98",letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:500}}>Milestones</span>
