@@ -391,10 +391,11 @@ export default function App(){
           {data.milestones.map(ms=>{
             const x=toX(ms.date);if(x<-100||x>(vw.current||1200)+100)return null;
             const row=msS.rowFor.get(ms.id)||0;const isSel=sel?.type==="ms"&&sel.id===ms.id;const isEd=ed?.type==="ms"&&ed.id===ms.id;
-            return(<div key={ms.id} data-r="ms" data-id={ms.id} data-sc="g" style={{position:"absolute",left:x-6,top:10+row*32,display:"flex",alignItems:"center",gap:8,cursor:"grab",zIndex:isSel?10:1,height:24,whiteSpace:"nowrap"}}>
-              <div style={{width:10,height:10,transform:"rotate(45deg)",flexShrink:0,background:isSel?(ms.color||IO):BG,border:`1.5px solid ${ms.color||IO}`,boxShadow:isSel?`0 0 0 3px ${IO_LIGHT}`:"none"}}/>
+            return(<div key={ms.id} data-r="ms" data-id={ms.id} data-sc="g" onDoubleClick={e=>{e.stopPropagation();if(!isEd)setEd({type:"ms",id:ms.id});}}
+              style={{position:"absolute",left:x-12,top:10+row*32,display:"flex",alignItems:"center",gap:8,cursor:isEd?"text":"grab",zIndex:isSel?10:1,height:24,whiteSpace:"nowrap",padding:"6px 12px 6px 8px",margin:"-6px -12px -6px -8px",borderRadius:6,touchAction:"none"}}>
+              <div style={{width:10,height:10,transform:"rotate(45deg)",flexShrink:0,background:isSel?(ms.color||IO):BG,border:`1.5px solid ${ms.color||IO}`,boxShadow:isSel?`0 0 0 3px ${IO_LIGHT}`:"none",pointerEvents:"none"}}/>
               {isEd?(<Edit value={ms.name} onDone={v=>{mut(d=>{const m=d.milestones.find(mm=>mm.id===ms.id);if(m)m.name=v;});setEd(null);}} style={{fontFamily:"'Geist Mono',monospace",fontSize:12,width:110}}/>
-              ):(<span style={{fontFamily:"'Geist Mono',monospace",fontSize:12}} onDoubleClick={e=>{e.stopPropagation();setEd({type:"ms",id:ms.id});}}>
+              ):(<span style={{fontFamily:"'Geist Mono',monospace",fontSize:12,pointerEvents:"none"}}>
                 <span style={{color:"#8A8780",fontWeight:500}}>{new Date(ms.date).getDate()}</span>
                 <span style={{color:"#C5C2BC",margin:"0 5px"}}>·</span>
                 <span style={{color:"#1A1A1A",fontWeight:isSel?600:500}}>{ms.name}</span></span>)}
