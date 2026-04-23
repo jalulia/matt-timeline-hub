@@ -120,6 +120,7 @@ export default function App(){
   const[showMenu,setShowMenu]=useState(false);
   const[msDel,setMsDel]=useState(0);
   const cRef=useRef(null);const dr=useRef(null);const vw=useRef(1200);const saveTimer=useRef(null);
+  const msDrag=useRef(null);
   const sideRef=useRef(null);const laneRef=useRef(null);const scrollLock=useRef(false);
   const skipNextSave=useRef(false);
   useEffect(()=>{setMsDel(0);},[sel?.id]);
@@ -207,14 +208,24 @@ export default function App(){
   const onWheel=useCallback(e=>{if(e.metaKey||e.ctrlKey){e.preventDefault();const r=cRef.current.getBoundingClientRect();const mx=e.clientX-r.left-RAIL;const db=toDate(mx);const f=e.deltaY>0?.92:1.08;const np=clamp(ppd*f,1.5,60);setSx(((db-ORIGIN)/MS_DAY)*np-mx);setPpd(np);}else setSx(p=>p+e.deltaX+e.deltaY*.5);},[ppd,toDate]);
 
   const gid=el=>({id:el.dataset.id,pid:el.dataset.pid,tid:el.dataset.tid});
+  const moveMilestoneToClientX=useCallback((clientX,id)=>{
+    const rect=cRef.current?.getBoundingClientRect();
+    if(!rect)return;
+    const nextDate=snap(toDate(clientX-rect.left-RAIL));
+    mut(d=>{const ms=d.milestones.find(m=>m.id===id);if(ms)ms.date=nextDate;});
+  },[toDate,mut]);
+
+  const stopMilestoneDrag=useCallback(()=>{
+    msDrag.current=null;
+  },[]);
+
   const startMilestoneDrag=useCallback((e,id,sc="g")=>{
     if(e.button!==0)return;
     e.preventDefault();
     e.stopPropagation();
     const next={type:"ms",id,sc};
     setSel(next);
-    dr.current={type:"mms",...next,x0:e.clientX};
-    try{e.currentTarget.setPointerCapture?.(e.pointerId);}catch{}
+    msDrag.current={id};
   },[]);
 
   const onDown=useCallback(e=>{
@@ -223,7 +234,7 @@ export default function App(){
     const t=e.target.closest("[data-r]");const ro=t?.dataset.r;
     if(ro==="phl"||ro==="phr"){dr.current={type:ro==="phl"?"rl":"rr",...gid(t),x0:e.clientX};return e.stopPropagation();}
     if(ro==="ph"){setSel({type:"ph",...gid(t)});dr.current={type:"mph",...gid(t),x0:e.clientX};return e.stopPropagation();}
-    if(ro==="ms")return;
+    if(ro==="ms"){e.stopPropagation();return;}
     if(ro==="tbg"){const s=snap(toDate(x));dr.current={type:"cr",pid:t.dataset.pid,tid:t.dataset.tid,s,c:s,x0:e.clientX};setSel(null);return e.stopPropagation();}
     if(ro==="mbg"){const dt=snap(toDate(x));const id=uid();mut(d=>d.milestones.push({id,name:"Milestone",date:dt}));setEd({type:"ms",id});setSel({type:"ms",id,sc:"g"});return;}
     dr.current={type:"pan",x0:e.clientX,sx0:sx};setSel(null);setPopup(null);setShowMenu(false);
@@ -234,13 +245,13 @@ export default function App(){
     if(d.type==="cr"){const r=cRef.current.getBoundingClientRect();d.c=snap(toDate(e.clientX-r.left-RAIL));setPv({pid:d.pid,tid:d.tid,s:Math.min(d.s,d.c),e:Math.max(d.s,d.c)});return;}
     if(d.type==="mph"){const dd=Math.round(dx/ppd);mut(D=>{const tr=D.projects.find(p=>p.id===d.pid)?.tracks.find(t=>t.id===d.tid);const ph=tr?.phases.find(p=>p.id===d.id);if(!ph)return;if(!d.os){d.os=ph.start;d.oe=ph.end;}ph.start=d.os+dd*MS_DAY;ph.end=d.oe+dd*MS_DAY;});return;}
     if(d.type==="rl"||d.type==="rr"){const dd=Math.round(dx/ppd);mut(D=>{const tr=D.projects.find(p=>p.id===d.pid)?.tracks.find(t=>t.id===d.tid);const ph=tr?.phases.find(p=>p.id===d.id);if(!ph)return;if(!d.os){d.os=ph.start;d.oe=ph.end;}if(d.type==="rl")ph.start=Math.min(d.os+dd*MS_DAY,d.oe-MS_DAY);else ph.end=Math.max(d.oe+dd*MS_DAY,d.os+MS_DAY);});return;}
-    if(d.type==="mms"){const r=cRef.current.getBoundingClientRect();const nextDate=snap(toDate(e.clientX-r.left-RAIL));mut(D=>{const ms=D.milestones.find(m=>m.id===d.id);if(!ms)return;ms.date=nextDate;});return;}
   },[ppd,toDate,mut]);
 
   const onUp=useCallback(()=>{const d=dr.current;
     if(d?.type==="cr"){const s=Math.min(d.s,d.c),en=Math.max(d.s,d.c);if(en-s>=MS_DAY*.5){const id=uid();mut(D=>{const tr=D.projects.find(p=>p.id===d.pid)?.tracks.find(t=>t.id===d.tid);if(tr)tr.phases.push({id,name:"",start:s,end:Math.max(en,s+MS_DAY),style:0});});setEd({type:"ph",id,pid:d.pid,tid:d.tid});setSel({type:"ph",id,pid:d.pid,tid:d.tid});}}
     dr.current=null;setPv(null);
-  },[mut]);
+    stopMilestoneDrag();
+  },[mut,stopMilestoneDrag]);
 
   useEffect(()=>{
     window.addEventListener("pointermove",onMove);
@@ -254,6 +265,17 @@ export default function App(){
       window.removeEventListener("mouseup",onUp);
     };
   },[onMove,onUp]);
+
+  useEffect(()=>{
+    const handleMouseMove=e=>{if(msDrag.current)moveMilestoneToClientX(e.clientX,msDrag.current.id);};
+    const handleMouseUp=()=>stopMilestoneDrag();
+    window.addEventListener("mousemove",handleMouseMove);
+    window.addEventListener("mouseup",handleMouseUp);
+    return()=>{
+      window.removeEventListener("mousemove",handleMouseMove);
+      window.removeEventListener("mouseup",handleMouseUp);
+    };
+  },[moveMilestoneToClientX,stopMilestoneDrag]);
 
   useEffect(()=>{const fn=e=>{
     if(e.key==="z"&&(e.metaKey||e.ctrlKey)&&!e.shiftKey){e.preventDefault();undo();return;}
