@@ -356,19 +356,10 @@ export default function App(){
       </div>
 
       {/* SIDEBAR */}
-      <div style={{position:"absolute",top:HEAD,left:0,width:RAIL,bottom:0,borderRight:"1px solid #E0DDD7",zIndex:10,background:SIDE_BG,display:"flex",flexDirection:"column"}} onPointerDown={e=>e.stopPropagation()}>
+      <div style={{position:"absolute",top:HEAD,left:0,width:rail,bottom:0,borderRight:"1px solid #E0DDD7",zIndex:10,background:SIDE_BG,display:"flex",flexDirection:"column"}} onPointerDown={e=>e.stopPropagation()}>
         <div>
-          <div style={{height:RULER_H,position:"relative",overflow:"hidden",background:BG}}>
-            {ticks.map((t,i)=>{
-              const x=RAIL+toX(t.ts);if(x<-140||x>RAIL+40)return null;
-              if(t.t==="mo")return(<div key={`sm${i}`} style={{position:"absolute",left:x}}><div style={{position:"absolute",top:0,height:RULER_H,width:1,background:"#1A1A1A"}}/><div style={{position:"absolute",top:8,left:8,fontFamily:"'Geist',sans-serif",fontSize:13,fontWeight:500,color:"#1A1A1A",whiteSpace:"nowrap"}}>{t.l} <span style={{color:"#A09E98",fontWeight:400}}>{t.yr}</span></div></div>);
-              if(t.f)return <div key={`sf${i}`} style={{position:"absolute",left:x,bottom:0}}><div style={{position:"absolute",bottom:0,width:1,height:RULER_H,background:"#1A1A1A"}}/></div>;
-              return(<div key={`sd${i}`} style={{position:"absolute",left:x,bottom:0}}><div style={{position:"absolute",bottom:0,width:1,height:t.wk?24:12,background:t.wk?"#A09E98":"#D5D2CC"}}/>{(ppd>5||t.wk)&&<div style={{position:"absolute",bottom:t.wk?28:16,left:0,transform:"translateX(-50%)",fontFamily:"'Geist Mono',monospace",fontSize:10.5,color:t.wk?"#5A5850":"#A09E98",fontWeight:t.wk?500:400,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{t.l}</div>}</div>);
-            })}
-          </div>
-          <div style={{height:AXIS_H,borderBottom:"1px solid #1A1A1A",position:"relative",background:BG}}>
-            {todayX>-RAIL-4&&todayX<4&&(<div style={{position:"absolute",top:-1,left:RAIL+todayX,width:8,height:8,background:IO,borderRadius:"50%",transform:"translateX(-50%)",zIndex:4}}/>)}
-          </div>
+          <div style={{height:RULER_H,background:BG}}/>
+          <div style={{height:AXIS_H,borderBottom:"1px solid #1A1A1A",background:BG}}/>
         </div>
         <div style={{height:msH,borderBottom:"1px solid #E0DDD7",display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"0 20px"}}>
           <span style={{fontFamily:"'Geist Mono',monospace",fontSize:9.5,color:"#A09E98",letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:500}}>Milestones</span>
