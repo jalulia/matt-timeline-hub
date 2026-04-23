@@ -419,6 +419,18 @@ export default function App(){
         </div>
       </div>
 
+      {/* RESIZE HANDLE */}
+      <div onPointerDown={e=>{
+          if(e.button!==0)return;
+          e.stopPropagation();e.preventDefault();
+          railDrag.current={startX:e.clientX,startRail:rail};
+          try{e.currentTarget.setPointerCapture(e.pointerId);}catch(_){}
+        }}
+        onPointerMove={e=>{if(!railDrag.current)return;const d=railDrag.current;setRail(clamp(d.startRail+(e.clientX-d.startX),RAIL_MIN,RAIL_MAX));}}
+        onPointerUp={e=>{railDrag.current=null;try{e.currentTarget.releasePointerCapture(e.pointerId);}catch(_){}}}
+        onClick={e=>e.stopPropagation()}
+        style={{position:"absolute",top:HEAD,left:rail-3,width:6,bottom:0,cursor:"col-resize",zIndex:30,background:"transparent"}}/>
+
       {/* TIMELINE */}
       <div style={{position:"absolute",top:HEAD,left:rail,right:0,bottom:0,overflow:"hidden"}}>
         {todayX>-2&&todayX<(vw.current||1200)+2&&(
