@@ -4,7 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 const DOC_ID = "shared";
 
 const MS_DAY = 864e5;
-const RAIL = 240;
+const RAIL_DEFAULT = 240;
+const RAIL_MIN = 180;
+const RAIL_MAX = 520;
 const HEAD = 48;
 const RULER_H = 60;
 const AXIS_H = 6;
@@ -45,7 +47,7 @@ function getVis(si,tc,phc){
 }
 
 function stackRows(ph){const s=[...ph].sort((a,b)=>a.start-b.start||(a.end-a.start)-(b.end-b.start));const ends=[],map=new Map();s.forEach(p=>{let r=0;while(r<ends.length&&ends[r]>p.start)r++;ends[r]=p.end;map.set(p.id,r);});return{rowFor:map,count:Math.max(1,ends.length)};}
-function stackMs(ms,toX){const s=[...ms].sort((a,b)=>a.date-b.date);const ends=[],map=new Map();s.forEach(m=>{const x=toX(m.date);let r=0;while(r<ends.length&&ends[r]>=x-4)r++;ends[r]=x+90;map.set(m.id,r);});return{rowFor:map,count:Math.max(1,ends.length)};}
+function stackMs(ms,toX,widthFor){const s=[...ms].sort((a,b)=>a.date-b.date);const ends=[],map=new Map();s.forEach(m=>{const x=toX(m.date);const w=widthFor?widthFor(m):90;let r=0;while(r<ends.length&&ends[r]>=x-4)r++;ends[r]=x+w+8;map.set(m.id,r);});return{rowFor:map,count:Math.max(1,ends.length)};}
 
 const SEED={milestones:[
   {id:uid(),name:"CL cutoff",date:new Date(2026,3,24).getTime()},
@@ -111,6 +113,9 @@ export default function App(){
   const[loaded,setLoaded]=useState(false);
   const[sx,setSx]=useState(0);
   const[ppd,setPpd]=useState(16);
+  const[rail,setRail]=useState(()=>{try{const v=parseInt(localStorage.getItem("tl.rail")||"",10);if(!isNaN(v))return clamp(v,RAIL_MIN,RAIL_MAX);}catch(e){}return RAIL_DEFAULT;});
+  useEffect(()=>{try{localStorage.setItem("tl.rail",String(rail));}catch(e){}if(cRef.current)vw.current=cRef.current.offsetWidth-rail;},[rail]);
+  const railDrag=useRef(null);
   const[sel,setSel]=useState(null);
   const[ed,setEd]=useState(null);
   const[popup,setPopup]=useState(null);
@@ -199,21 +204,21 @@ export default function App(){
 
   useEffect(()=>{if(!document.getElementById("tf")){const l=document.createElement("link");l.id="tf";l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap";document.head.appendChild(l);}},[]);
   useEffect(()=>{const tick=()=>{const n=new Date();setClock(`${MONTHS[n.getMonth()]} ${n.getDate()}, ${n.getFullYear()}  ${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`);};tick();const iv=setInterval(tick,30000);return()=>clearInterval(iv);},[]);
-  useEffect(()=>{const m=()=>{if(cRef.current)vw.current=cRef.current.offsetWidth-RAIL;};m();window.addEventListener("resize",m);return()=>window.removeEventListener("resize",m);},[]);
-  useEffect(()=>{if(cRef.current){const w=cRef.current.offsetWidth-RAIL;setSx(((todayTs()-ORIGIN)/MS_DAY)*ppd-w/3);}},[]);
+  useEffect(()=>{const m=()=>{if(cRef.current)vw.current=cRef.current.offsetWidth-rail;};m();window.addEventListener("resize",m);return()=>window.removeEventListener("resize",m);},[rail]);
+  useEffect(()=>{if(cRef.current){const w=cRef.current.offsetWidth-rail;setSx(((todayTs()-ORIGIN)/MS_DAY)*ppd-w/3);}},[]);
 
   const toX=useCallback(ts=>((ts-ORIGIN)/MS_DAY)*ppd-sx,[sx,ppd]);
   const toDate=useCallback(x=>((x+sx)/ppd)*MS_DAY+ORIGIN,[sx,ppd]);
 
-  const onWheel=useCallback(e=>{if(e.metaKey||e.ctrlKey){e.preventDefault();const r=cRef.current.getBoundingClientRect();const mx=e.clientX-r.left-RAIL;const db=toDate(mx);const f=e.deltaY>0?.92:1.08;const np=clamp(ppd*f,1.5,60);setSx(((db-ORIGIN)/MS_DAY)*np-mx);setPpd(np);}else setSx(p=>p+e.deltaX+e.deltaY*.5);},[ppd,toDate]);
+  const onWheel=useCallback(e=>{if(e.metaKey||e.ctrlKey){e.preventDefault();const r=cRef.current.getBoundingClientRect();const mx=e.clientX-r.left-rail;const db=toDate(mx);const f=e.deltaY>0?.92:1.08;const np=clamp(ppd*f,1.5,60);setSx(((db-ORIGIN)/MS_DAY)*np-mx);setPpd(np);}else setSx(p=>p+e.deltaX+e.deltaY*.5);},[ppd,toDate,rail]);
 
   const gid=el=>({id:el.dataset.id,pid:el.dataset.pid,tid:el.dataset.tid});
   const moveMilestoneToClientX=useCallback((clientX,id)=>{
     const rect=cRef.current?.getBoundingClientRect();
     if(!rect)return;
-    const nextDate=snap(toDate(clientX-rect.left-RAIL));
+    const nextDate=snap(toDate(clientX-rect.left-rail));
     mut(d=>{const ms=d.milestones.find(m=>m.id===id);if(ms)ms.date=nextDate;});
-  },[toDate,mut]);
+  },[toDate,mut,rail]);
 
   const stopMilestoneDrag=useCallback(()=>{
     msDrag.current=null;
@@ -229,7 +234,7 @@ export default function App(){
   },[]);
 
   const onDown=useCallback(e=>{
-    if(e.button!==0)return;const r=cRef.current.getBoundingClientRect();const x=e.clientX-r.left-RAIL;
+    if(e.button!==0)return;const r=cRef.current.getBoundingClientRect();const x=e.clientX-r.left-rail;
     if(x<0)return;
     const t=e.target.closest("[data-r]");const ro=t?.dataset.r;
     if(ro==="phl"||ro==="phr"){dr.current={type:ro==="phl"?"rl":"rr",...gid(t),x0:e.clientX};return e.stopPropagation();}
@@ -238,14 +243,14 @@ export default function App(){
     if(ro==="tbg"){const s=snap(toDate(x));dr.current={type:"cr",pid:t.dataset.pid,tid:t.dataset.tid,s,c:s,x0:e.clientX};setSel(null);return e.stopPropagation();}
     if(ro==="mbg"){const dt=snap(toDate(x));const id=uid();mut(d=>d.milestones.push({id,name:"Milestone",date:dt}));setEd({type:"ms",id});setSel({type:"ms",id,sc:"g"});return;}
     dr.current={type:"pan",x0:e.clientX,sx0:sx};setSel(null);setPopup(null);setShowMenu(false);
-  },[sx,ppd,toDate,mut]);
+  },[sx,ppd,toDate,mut,rail]);
 
   const onMove=useCallback(e=>{const d=dr.current;if(!d)return;const dx=e.clientX-d.x0;
     if(d.type==="pan")return setSx(d.sx0-dx);
-    if(d.type==="cr"){const r=cRef.current.getBoundingClientRect();d.c=snap(toDate(e.clientX-r.left-RAIL));setPv({pid:d.pid,tid:d.tid,s:Math.min(d.s,d.c),e:Math.max(d.s,d.c)});return;}
+    if(d.type==="cr"){const r=cRef.current.getBoundingClientRect();d.c=snap(toDate(e.clientX-r.left-rail));setPv({pid:d.pid,tid:d.tid,s:Math.min(d.s,d.c),e:Math.max(d.s,d.c)});return;}
     if(d.type==="mph"){const dd=Math.round(dx/ppd);mut(D=>{const tr=D.projects.find(p=>p.id===d.pid)?.tracks.find(t=>t.id===d.tid);const ph=tr?.phases.find(p=>p.id===d.id);if(!ph)return;if(!d.os){d.os=ph.start;d.oe=ph.end;}ph.start=d.os+dd*MS_DAY;ph.end=d.oe+dd*MS_DAY;});return;}
     if(d.type==="rl"||d.type==="rr"){const dd=Math.round(dx/ppd);mut(D=>{const tr=D.projects.find(p=>p.id===d.pid)?.tracks.find(t=>t.id===d.tid);const ph=tr?.phases.find(p=>p.id===d.id);if(!ph)return;if(!d.os){d.os=ph.start;d.oe=ph.end;}if(d.type==="rl")ph.start=Math.min(d.os+dd*MS_DAY,d.oe-MS_DAY);else ph.end=Math.max(d.oe+dd*MS_DAY,d.os+MS_DAY);});return;}
-  },[ppd,toDate,mut]);
+  },[ppd,toDate,mut,rail]);
 
   const onUp=useCallback(()=>{const d=dr.current;
     if(d?.type==="cr"){const s=Math.min(d.s,d.c),en=Math.max(d.s,d.c);if(en-s>=MS_DAY*.5){const id=uid();mut(D=>{const tr=D.projects.find(p=>p.id===d.pid)?.tracks.find(t=>t.id===d.tid);if(tr)tr.phases.push({id,name:"",start:s,end:Math.max(en,s+MS_DAY),style:0});});setEd({type:"ph",id,pid:d.pid,tid:d.tid});setSel({type:"ph",id,pid:d.pid,tid:d.tid});}}
@@ -308,7 +313,8 @@ export default function App(){
     return{proj,stacks,height,trackLayout};
   }),[data]);
 
-  const msS=useMemo(()=>stackMs(data.milestones,toX),[data.milestones,toX]);
+  const msWidth=useCallback(m=>{const name=m.name||"";return 26+(String(new Date(m.date).getDate()).length)*7+10+name.length*7+8;},[]);
+  const msS=useMemo(()=>stackMs(data.milestones,toX,msWidth),[data.milestones,toX,msWidth]);
   const msH=msS.count*32+20;
   const todayX=toX(todayTs());
   const BG="#fff";const SIDE_BG="#F8F7F5";
@@ -327,12 +333,12 @@ export default function App(){
           <span style={{fontFamily:"'Geist Mono',monospace",fontSize:11,color:"#8A8780",letterSpacing:"0.05em"}}>{clock}</span>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <button onClick={()=>{const w=(cRef.current?.offsetWidth||1400)-RAIL;setSx(((todayTs()-ORIGIN)/MS_DAY)*ppd-w/3);}}
+          <button onClick={()=>{const w=(cRef.current?.offsetWidth||1400)-rail;setSx(((todayTs()-ORIGIN)/MS_DAY)*ppd-w/3);}}
             style={{fontFamily:"'Geist Mono',monospace",fontSize:10,letterSpacing:"0.07em",textTransform:"uppercase",color:"#8A8780",background:"none",border:"1px solid #E0DDD7",padding:"5px 14px",cursor:"pointer",borderRadius:3,fontWeight:500}}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=IO;e.currentTarget.style.color=IO;}} onMouseLeave={e=>{e.currentTarget.style.borderColor="#E0DDD7";e.currentTarget.style.color="#8A8780";}}>Today</button>
           <div style={{display:"inline-flex",border:"1px solid #E0DDD7",borderRadius:3,overflow:"hidden"}}>
             {[{l:"D",v:28},{l:"W",v:14},{l:"M",v:5},{l:"Q",v:2}].map(z=>(
-              <button key={z.l} onClick={()=>{const w=(cRef.current?.offsetWidth||1400)-RAIL;const cx=w/2;const dm=toDate(cx);setSx(((dm-ORIGIN)/MS_DAY)*z.v-cx);setPpd(z.v);}}
+              <button key={z.l} onClick={()=>{const w=(cRef.current?.offsetWidth||1400)-rail;const cx=w/2;const dm=toDate(cx);setSx(((dm-ORIGIN)/MS_DAY)*z.v-cx);setPpd(z.v);}}
                 style={{fontFamily:"'Geist Mono',monospace",fontSize:10,textTransform:"uppercase",
                   color:Math.abs(ppd-z.v)<1?"#fff":"#8A8780",background:Math.abs(ppd-z.v)<1?"#1A1A1A":"transparent",
                   padding:"5px 11px",border:"none",borderRight:"1px solid #E0DDD7",cursor:"pointer",fontWeight:500}}>{z.l}</button>))}
@@ -350,19 +356,10 @@ export default function App(){
       </div>
 
       {/* SIDEBAR */}
-      <div style={{position:"absolute",top:HEAD,left:0,width:RAIL,bottom:0,borderRight:"1px solid #E0DDD7",zIndex:10,background:SIDE_BG,display:"flex",flexDirection:"column"}} onPointerDown={e=>e.stopPropagation()}>
+      <div style={{position:"absolute",top:HEAD,left:0,width:rail,bottom:0,borderRight:"1px solid #E0DDD7",zIndex:10,background:SIDE_BG,display:"flex",flexDirection:"column"}} onPointerDown={e=>e.stopPropagation()}>
         <div>
-          <div style={{height:RULER_H,position:"relative",overflow:"hidden",background:BG}}>
-            {ticks.map((t,i)=>{
-              const x=RAIL+toX(t.ts);if(x<-140||x>RAIL+40)return null;
-              if(t.t==="mo")return(<div key={`sm${i}`} style={{position:"absolute",left:x}}><div style={{position:"absolute",top:0,height:RULER_H,width:1,background:"#1A1A1A"}}/><div style={{position:"absolute",top:8,left:8,fontFamily:"'Geist',sans-serif",fontSize:13,fontWeight:500,color:"#1A1A1A",whiteSpace:"nowrap"}}>{t.l} <span style={{color:"#A09E98",fontWeight:400}}>{t.yr}</span></div></div>);
-              if(t.f)return <div key={`sf${i}`} style={{position:"absolute",left:x,bottom:0}}><div style={{position:"absolute",bottom:0,width:1,height:RULER_H,background:"#1A1A1A"}}/></div>;
-              return(<div key={`sd${i}`} style={{position:"absolute",left:x,bottom:0}}><div style={{position:"absolute",bottom:0,width:1,height:t.wk?24:12,background:t.wk?"#A09E98":"#D5D2CC"}}/>{(ppd>5||t.wk)&&<div style={{position:"absolute",bottom:t.wk?28:16,left:0,transform:"translateX(-50%)",fontFamily:"'Geist Mono',monospace",fontSize:10.5,color:t.wk?"#5A5850":"#A09E98",fontWeight:t.wk?500:400,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{t.l}</div>}</div>);
-            })}
-          </div>
-          <div style={{height:AXIS_H,borderBottom:"1px solid #1A1A1A",position:"relative",background:BG}}>
-            {todayX>-RAIL-4&&todayX<4&&(<div style={{position:"absolute",top:-1,left:RAIL+todayX,width:8,height:8,background:IO,borderRadius:"50%",transform:"translateX(-50%)",zIndex:4}}/>)}
-          </div>
+          <div style={{height:RULER_H,background:BG}}/>
+          <div style={{height:AXIS_H,borderBottom:"1px solid #1A1A1A",background:BG}}/>
         </div>
         <div style={{height:msH,borderBottom:"1px solid #E0DDD7",display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"0 20px"}}>
           <span style={{fontFamily:"'Geist Mono',monospace",fontSize:9.5,color:"#A09E98",letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:500}}>Milestones</span>
@@ -422,8 +419,20 @@ export default function App(){
         </div>
       </div>
 
+      {/* RESIZE HANDLE */}
+      <div onPointerDown={e=>{
+          if(e.button!==0)return;
+          e.stopPropagation();e.preventDefault();
+          railDrag.current={startX:e.clientX,startRail:rail};
+          try{e.currentTarget.setPointerCapture(e.pointerId);}catch(_){}
+        }}
+        onPointerMove={e=>{if(!railDrag.current)return;const d=railDrag.current;setRail(clamp(d.startRail+(e.clientX-d.startX),RAIL_MIN,RAIL_MAX));}}
+        onPointerUp={e=>{railDrag.current=null;try{e.currentTarget.releasePointerCapture(e.pointerId);}catch(_){}}}
+        onClick={e=>e.stopPropagation()}
+        style={{position:"absolute",top:HEAD,left:rail-3,width:6,bottom:0,cursor:"col-resize",zIndex:30,background:"transparent"}}/>
+
       {/* TIMELINE */}
-      <div style={{position:"absolute",top:HEAD,left:RAIL,right:0,bottom:0,overflow:"hidden"}}>
+      <div style={{position:"absolute",top:HEAD,left:rail,right:0,bottom:0,overflow:"hidden"}}>
         {todayX>-2&&todayX<(vw.current||1200)+2&&(
           <div style={{position:"absolute",top:0,bottom:0,left:todayX,width:1.5,background:IO,opacity:.7,zIndex:6,pointerEvents:"none"}}>
             <div style={{position:"absolute",top:-1,left:-3,width:8,height:8,background:IO,borderRadius:"50%"}}/>
