@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+const DOC_ID = "shared";
 
 const MS_DAY = 864e5;
 const RAIL = 240;
@@ -117,6 +120,7 @@ export default function App(){
   const[showMenu,setShowMenu]=useState(false);
   const cRef=useRef(null);const dr=useRef(null);const vw=useRef(1200);const saveTimer=useRef(null);
   const sideRef=useRef(null);const laneRef=useRef(null);const scrollLock=useRef(false);
+  const skipNextSave=useRef(false);
 
   /* ─── Undo/Redo ─── */
   const history=useRef([]);const future=useRef([]);const MAX_HIST=50;
@@ -140,8 +144,51 @@ export default function App(){
   },[]);
 
   /* ─── Storage ─── */
-  useEffect(()=>{(async()=>{try{const r=await window.storage.get("timeline-data");if(r?.value){const p=JSON.parse(r.value);if(p?.projects)setData(p);}}catch(e){}setLoaded(true);})();},[]);
-  useEffect(()=>{if(!loaded)return;setSaveStatus("saving");if(saveTimer.current)clearTimeout(saveTimer.current);saveTimer.current=setTimeout(()=>{(async()=>{try{await window.storage.set("timeline-data",JSON.stringify(data));setSaveStatus("saved");setTimeout(()=>setSaveStatus(""),2000);}catch(e){setSaveStatus("");}})();},400);return()=>{if(saveTimer.current)clearTimeout(saveTimer.current);};},[data,loaded]);
+  /* ─── Cloud Storage + Realtime sync (shared across browsers) ─── */
+  useEffect(()=>{
+    let mounted=true;
+    (async()=>{
+      try{
+        const{data:row}=await supabase.from("timeline_docs").select("data").eq("id",DOC_ID).maybeSingle();
+        if(mounted&&row?.data&&row.data.projects){skipNextSave.current=true;setData(row.data);}
+        else if(mounted){
+          // seed the empty shared doc with the demo data so first visitor sees something
+          await supabase.from("timeline_docs").upsert({id:DOC_ID,data:SEED});
+          skipNextSave.current=true;setData(SEED);
+        }
+      }catch(e){}
+      if(mounted)setLoaded(true);
+    })();
+    const ch=supabase.channel("timeline_docs:"+DOC_ID)
+      .on("postgres_changes",{event:"*",schema:"public",table:"timeline_docs",filter:`id=eq.${DOC_ID}`},
+        payload=>{
+          const next=payload.new?.data;
+          if(next&&next.projects){
+            const incoming=JSON.stringify(next);
+            setData(prev=>{
+              if(JSON.stringify(prev)===incoming)return prev;
+              skipNextSave.current=true;
+              return next;
+            });
+          }
+        })
+      .subscribe();
+    return()=>{mounted=false;supabase.removeChannel(ch);};
+  },[]);
+  useEffect(()=>{
+    if(!loaded)return;
+    if(skipNextSave.current){skipNextSave.current=false;return;}
+    setSaveStatus("saving");
+    if(saveTimer.current)clearTimeout(saveTimer.current);
+    saveTimer.current=setTimeout(()=>{(async()=>{
+      try{
+        const{error}=await supabase.from("timeline_docs").upsert({id:DOC_ID,data,updated_at:new Date().toISOString()});
+        if(error)throw error;
+        setSaveStatus("saved");setTimeout(()=>setSaveStatus(""),2000);
+      }catch(e){setSaveStatus("");}
+    })();},400);
+    return()=>{if(saveTimer.current)clearTimeout(saveTimer.current);};
+  },[data,loaded]);
 
   const syncScroll=useCallback(src=>{if(scrollLock.current)return;scrollLock.current=true;const f=src==="s"?sideRef.current:laneRef.current;const t=src==="s"?laneRef.current:sideRef.current;if(f&&t)t.scrollTop=f.scrollTop;requestAnimationFrame(()=>{scrollLock.current=false;});},[]);
 
