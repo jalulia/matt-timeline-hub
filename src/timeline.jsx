@@ -267,11 +267,17 @@ export default function App(){
   },[onMove,onUp]);
 
   useEffect(()=>{
+    const handlePointerMove=e=>{if(msDrag.current)moveMilestoneToClientX(e.clientX,msDrag.current.id);};
+    const handlePointerUp=()=>stopMilestoneDrag();
     const handleMouseMove=e=>{if(msDrag.current)moveMilestoneToClientX(e.clientX,msDrag.current.id);};
     const handleMouseUp=()=>stopMilestoneDrag();
+    window.addEventListener("pointermove",handlePointerMove);
+    window.addEventListener("pointerup",handlePointerUp);
     window.addEventListener("mousemove",handleMouseMove);
     window.addEventListener("mouseup",handleMouseUp);
     return()=>{
+      window.removeEventListener("pointermove",handlePointerMove);
+      window.removeEventListener("pointerup",handlePointerUp);
       window.removeEventListener("mousemove",handleMouseMove);
       window.removeEventListener("mouseup",handleMouseUp);
     };
