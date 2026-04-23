@@ -164,6 +164,8 @@ export default function App(){
         payload=>{
           const next=payload.new?.data;
           if(next&&next.projects){
+            // Don't apply remote updates while user is mid-drag — would reset drag origin refs.
+            if(dr.current)return;
             const incoming=JSON.stringify(next);
             setData(prev=>{
               if(JSON.stringify(prev)===incoming)return prev;
@@ -478,9 +480,14 @@ export default function App(){
       {/* MILESTONE COLOR — when milestone is selected */}
       {sel?.type==="ms"&&(()=>{const ms=data.milestones.find(m=>m.id===sel.id);
         if(!ms)return null;
+        // Pull palette from project + track colors actually in use, plus a few defaults.
+        const used=[];
+        data.projects.forEach(p=>{if(p.color)used.push(p.color);p.tracks.forEach(t=>{if(t.color)used.push(t.color);});});
+        const defaults=["#FF4F00","#1A1A1A","#2A9D8F","#D4A017"];
+        const swatches=Array.from(new Set([...used,...defaults])).slice(0,10);
         return(<div onPointerDown={e=>e.stopPropagation()} style={{position:"fixed",bottom:44,left:"50%",transform:"translateX(-50%)",background:"#fff",border:"1.5px solid #1A1A1A",borderRadius:4,boxShadow:"0 4px 16px rgba(0,0,0,0.08)",padding:"6px 8px",display:"flex",alignItems:"center",gap:6,zIndex:50}}>
           <span style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#8A8780",letterSpacing:"0.08em",textTransform:"uppercase",marginRight:2,fontWeight:500}}>Color</span>
-          {["#FF4F00","#002FA7","#E8562A","#D4A017","#2A9D8F","#7B61FF","#C43E6C","#1A1A1A"].map(c=>(
+          {swatches.map(c=>(
             <div key={c} onClick={()=>mut(d=>{const m=d.milestones.find(mm=>mm.id===sel.id);if(m)m.color=c;})}
               style={{width:18,height:18,borderRadius:"50%",background:c,cursor:"pointer",
                 border:(ms.color||IO)===c?`2px solid ${IO}`:"2px solid transparent",
