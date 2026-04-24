@@ -387,10 +387,8 @@ export default function App(){
 
       {/* SIDEBAR */}
       <div style={{position:"absolute",top:HEAD,left:0,width:rail,bottom:0,borderRight:"1px solid #E0DDD7",zIndex:10,background:SIDE_BG,display:"flex",flexDirection:"column"}} onPointerDown={e=>e.stopPropagation()}>
-        <div>
-          <div style={{height:RULER_H,background:BG}}/>
-          <div style={{height:AXIS_H,borderBottom:"1px solid #1A1A1A",background:BG}}/>
-        </div>
+        {/* Ruler/axis area is transparent so the continuous black axis line spans full width */}
+        <div style={{height:RULER_H+AXIS_H,background:"transparent",pointerEvents:"none"}}/>
         <div style={{height:msH,borderBottom:"1px solid #E0DDD7",display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"0 20px"}}>
           <span style={{fontFamily:"'Geist Mono',monospace",fontSize:9.5,color:"#A09E98",letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:500}}>Milestones</span>
         </div>
@@ -449,6 +447,9 @@ export default function App(){
         </div>
       </div>
 
+      {/* Continuous black axis line under ruler — spans full width across sidebar + timeline */}
+      <div style={{position:"absolute",top:HEAD+RULER_H+AXIS_H-1,left:0,right:0,height:1,background:"#1A1A1A",zIndex:11,pointerEvents:"none"}}/>
+
       {/* RESIZE HANDLE */}
       <div onPointerDown={e=>{
           if(e.button!==0)return;
@@ -475,13 +476,19 @@ export default function App(){
           {(()=>{const cur=new Date(toDate(0));const monthStart=new Date(cur.getFullYear(),cur.getMonth(),1).getTime();const mx=toX(monthStart);if(mx>60)return null;return(
             <div style={{position:"absolute",top:8,left:8,fontFamily:"'Geist',sans-serif",fontSize:13,fontWeight:500,color:"#1A1A1A",whiteSpace:"nowrap",pointerEvents:"none",zIndex:2}}>{MONTHS[cur.getMonth()]} <span style={{color:"#A09E98",fontWeight:400}}>{cur.getFullYear()}</span></div>
           );})()}
+          {/* Compute whether the sticky label is on so preceding-month labels can drop a row to avoid crowding it */}
+          {(()=>null)()}
           {ticks.map((t,i)=>{
             const x=toX(t.ts);if(x<-140||x>(vw.current||1200)+40)return null;
             if(t.t==="sun")return null;
-            if(t.t==="mo"){const showLabel=x>=60;return(<div key={`m${i}`} style={{position:"absolute",left:x}}>
+            if(t.t==="mo"){const showLabel=x>=60;
+              /* If sticky current-month label is showing (its month boundary is off-screen left), drop the preceding-month label below the sticky to avoid crowding it. */
+              const cur=new Date(toDate(0));const cms=new Date(cur.getFullYear(),cur.getMonth(),1).getTime();const stickyOn=toX(cms)<=60;
+              const precTop=stickyOn?28:8;
+              return(<div key={`m${i}`} style={{position:"absolute",left:x}}>
               <div style={{position:"absolute",top:0,height:RULER_H,width:1,background:"#1A1A1A"}}/>
               {/* preceding month muted */}
-              {x>40&&<div style={{position:"absolute",top:8,right:6,fontFamily:"'Geist',sans-serif",fontSize:11,fontWeight:400,color:"#C5C2BC",whiteSpace:"nowrap"}}>{t.prev}</div>}
+              {x>40&&<div style={{position:"absolute",top:precTop,right:6,fontFamily:"'Geist',sans-serif",fontSize:11,fontWeight:400,color:"#C5C2BC",whiteSpace:"nowrap"}}>{t.prev}</div>}
               {showLabel&&<div style={{position:"absolute",top:8,left:8,fontFamily:"'Geist',sans-serif",fontSize:13,fontWeight:500,color:"#1A1A1A",whiteSpace:"nowrap"}}>{t.l} <span style={{color:"#A09E98",fontWeight:400}}>{t.yr}</span></div>}
             </div>);}
             if(t.f)return <div key={`d${i}`} style={{position:"absolute",left:x,bottom:0}}><div style={{position:"absolute",bottom:0,width:1,height:RULER_H,background:"#1A1A1A"}}/></div>;
