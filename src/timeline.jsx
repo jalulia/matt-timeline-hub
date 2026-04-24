@@ -499,16 +499,19 @@ export default function App(){
           </div>)}
           {layout.map(({proj,trackLayout,height})=>(
             <div key={proj.id} style={{height,borderBottom:"1px solid #E8E6E1",position:"relative"}}>
-              {ticks.filter(t=>t.t==="d").map((t,i)=>{const x=toX(t.ts);if(x<-2||x>(vw.current||1200)+2)return null;return <div key={i} style={{position:"absolute",top:0,bottom:0,left:x,width:1,background:t.f?"#E0DDD7":"#F2F0ED",pointerEvents:"none"}}/>;})}
+              {/* project color stripe */}
+              <div style={{position:"absolute",top:0,bottom:0,left:0,width:2,background:proj.color||"transparent",pointerEvents:"none",zIndex:1}}/>
+              {ticks.filter(t=>t.t==="d"||t.t==="sun").map((t,i)=>{const x=toX(t.ts);if(x<-2||x>(vw.current||1200)+2)return null;const bg=t.t==="sun"?"#D5D2CC":(t.f?"#E0DDD7":"#F2F0ED");return <div key={i} style={{position:"absolute",top:0,bottom:0,left:x,width:1,background:bg,pointerEvents:"none"}}/>;})}
 
-              {trackLayout.map(({track,st,top,height:th},ti)=>{const tc=track.color;return(
+              {trackLayout.map(({track,st,top,height:th},ti)=>{const tc=track.color;let firstShown=false;return(
                 <div key={track.id} data-r="tbg" data-pid={proj.id} data-tid={track.id}
                   style={{position:"absolute",top,left:0,right:0,height:th,cursor:"crosshair",borderBottom:ti<trackLayout.length-1?"1px solid #F2F0ED":"none"}}>
                   {track.phases.map(ph=>{
                     const x1=toX(ph.start),x2=toX(ph.end),w=x2-x1;
                     if(x2<-60||x1>(vw.current||1200)+60)return null;
                     const row=st.rowFor.get(ph.id)||0;const isSel2=sel?.type==="ph"&&sel.id===ph.id;const isEd2=ed?.type==="ph"&&ed.id===ph.id;
-                    const v=getVis(ph.style||0,tc,ph.color);const sortedIdx=[...track.phases].sort((a,b)=>a.start-b.start).findIndex(p=>p.id===ph.id)+1;
+                    const v=getVis(ph.style||0,tc,ph.color,proj.color);const sortedIdx=[...track.phases].sort((a,b)=>a.start-b.start).findIndex(p=>p.id===ph.id)+1;
+                    const showTrackTag=!firstShown&&w>90&&!!track.name;if(showTrackTag)firstShown=true;
                     return(<div key={ph.id} data-r="ph" data-id={ph.id} data-pid={proj.id} data-tid={track.id}
                       style={{position:"absolute",left:x1,top:row*ROW_H+(ROW_H-BAR_H)/2,width:Math.max(w,12),height:BAR_H,
                         background:v.bg,backgroundImage:v.bgi||"none",border:isSel2?`1.5px solid ${IO}`:v.border,borderRadius:3,
@@ -520,6 +523,7 @@ export default function App(){
                       <div data-r="phr" data-id={ph.id} data-pid={proj.id} data-tid={track.id} style={{position:"absolute",top:0,bottom:0,right:0,width:10,cursor:"ew-resize"}}/>
                       {isEd2?(<Edit value={ph.name} onDone={vl=>{mut(d=>{const tr2=d.projects.find(p=>p.id===proj.id)?.tracks.find(t=>t.id===track.id);const p2=tr2?.phases.find(p=>p.id===ph.id);if(p2)p2.name=vl;});setEd(null);}} style={{fontSize:13,fontWeight:v.fw,color:v.color}}/>
                       ):(<span style={{overflow:"hidden",textOverflow:"ellipsis",pointerEvents:"none",display:"flex",alignItems:"center",gap:6}}>
+                        {showTrackTag&&<span style={{fontFamily:"'Geist Mono',monospace",fontSize:9.5,color:v.numColor,opacity:.6,textTransform:"uppercase",letterSpacing:"0.08em",flexShrink:0,fontWeight:600}}>{track.name} ·</span>}
                         <span style={{fontFamily:"'Geist Mono',monospace",fontSize:11,color:v.numColor,flexShrink:0,fontWeight:600}}>{String(sortedIdx).padStart(2,"0")}</span>
                         {ph.name}</span>)}
                     </div>);
