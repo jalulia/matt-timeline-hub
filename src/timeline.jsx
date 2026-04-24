@@ -132,6 +132,10 @@ export default function App(){
   const[saveStatus,setSaveStatus]=useState("");
   const[showMenu,setShowMenu]=useState(false);
   const[msDel,setMsDel]=useState(0);
+  const[imgMode,setImgMode]=useState(false);
+  const fileInputRef=useRef(null);
+  const imgDrag=useRef(null);
+  const[imgSel,setImgSel]=useState(null);
   const cRef=useRef(null);const dr=useRef(null);const vw=useRef(1200);const saveTimer=useRef(null);
   const msDrag=useRef(null);
   const sideRef=useRef(null);const laneRef=useRef(null);const scrollLock=useRef(false);
