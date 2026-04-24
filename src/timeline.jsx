@@ -54,7 +54,7 @@ const SEED={milestones:[
   {id:uid(),name:"CL cutoff",date:new Date(2026,3,24).getTime()},
   {id:uid(),name:"Dossier lock",date:new Date(2026,3,25).getTime()},
   {id:uid(),name:"Sample deadline",date:new Date(2026,4,2).getTime()},
-],imageNotes:[],projects:[{id:"yoshi",name:"Yoshi",color:"#E8562A",tracks:[
+],imageNotes:[],linkNotes:[],projects:[{id:"yoshi",name:"Yoshi",color:"#E8562A",tracks:[
   {id:"t1",name:"Build",color:"#002FA7",phases:[
     {id:uid(),name:"Plan & Dossier",start:new Date(2026,3,17).getTime(),end:new Date(2026,3,22).getTime(),style:1},
     {id:uid(),name:"Sample & Order",start:new Date(2026,3,22).getTime(),end:new Date(2026,3,29).getTime(),style:0},
