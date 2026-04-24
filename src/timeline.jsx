@@ -729,6 +729,10 @@ export default function App(){
             {saveStatus==="saved"&&<><span style={{color:"#D5D2CC"}}>·</span><span style={{color:"#2A9D8F"}}>Saved</span></>}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <button onPointerDown={e=>e.stopPropagation()} onClick={onAddLink}
+              style={{fontFamily:"'Geist Mono',monospace",fontSize:10,letterSpacing:"0.07em",textTransform:"uppercase",color:"#8A8780",background:"none",border:"1px solid #E0DDD7",padding:"4px 12px",cursor:"pointer",borderRadius:14,fontWeight:500}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=IO;e.currentTarget.style.color=IO;}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="#E0DDD7";e.currentTarget.style.color="#8A8780";}}>Add Link</button>
             <button onPointerDown={e=>e.stopPropagation()} onClick={()=>fileInputRef.current?.click()}
               style={{fontFamily:"'Geist Mono',monospace",fontSize:10,letterSpacing:"0.07em",textTransform:"uppercase",color:"#8A8780",background:"none",border:"1px solid #E0DDD7",padding:"4px 12px",cursor:"pointer",borderRadius:14,fontWeight:500}}
               onMouseEnter={e=>{e.currentTarget.style.borderColor=IO;e.currentTarget.style.color=IO;}}
