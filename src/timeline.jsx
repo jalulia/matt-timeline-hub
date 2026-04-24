@@ -558,9 +558,9 @@ export default function App(){
                      const isHover=hover===ph.id;
                      const fmtMd=ts=>{const d=new Date(ts);return`${d.getMonth()+1}/${d.getDate()}`;};
                      return(<div key={ph.id} data-r="ph" data-id={ph.id} data-pid={proj.id} data-tid={track.id}
-                       onMouseEnter={e=>{setHover(ph.id);setHoverPos({x:e.clientX,y:e.clientY});}}
-                       onMouseMove={e=>{if(hover===ph.id)setHoverPos({x:e.clientX,y:e.clientY});}}
-                       onMouseLeave={()=>setHover(h=>h===ph.id?null:h)}
+                       onMouseEnter={e=>{setHover({id:ph.id,w:Math.max(w,12)});setHoverPos({x:e.clientX,y:e.clientY});}}
+                       onMouseMove={e=>{if(hover?.id===ph.id)setHoverPos({x:e.clientX,y:e.clientY});}}
+                       onMouseLeave={()=>setHover(h=>h?.id===ph.id?null:h)}
                       style={{position:"absolute",left:x1,top:row*ROW_H+(ROW_H-BAR_H)/2,width:Math.max(w,12),height:BAR_H,
                         background:v.bg,backgroundImage:v.bgi||"none",border:isSel2?`1.5px solid ${IO}`:v.border,borderRadius:3,
                         color:v.color,fontWeight:v.fw,fontStyle:v.fs||"normal",display:"flex",alignItems:"center",padding:"0 10px 0 12px",
