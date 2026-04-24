@@ -205,6 +205,7 @@ describe("month/day label collision (property-based)", () => {
         viewportWidth,
         stickyOn,
         stickyZoneEnd,
+        prevTickX: xPrev,
       });
 
       // Label rectangles in container space.
