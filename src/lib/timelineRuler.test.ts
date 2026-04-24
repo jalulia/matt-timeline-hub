@@ -198,6 +198,7 @@ describe("month/day label collision (property-based)", () => {
         viewportWidth,
         stickyOn,
         stickyZoneEnd,
+        nextTickX: xNext,
       });
       const next = getMonthTickVisibility({
         x: xNext,
