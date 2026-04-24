@@ -84,13 +84,14 @@ function ItemPopover({type,name,color,onRename,onColor,onClearColor,onDelete,onC
   const[nm,setNm]=useState(name);const[hex,setHex]=useState(color||"");const[del,setDel]=useState(0);const ref=useRef(null);
   useEffect(()=>setHex(color||""),[color]);useEffect(()=>{ref.current?.focus();ref.current?.select();},[]);
   const commit=()=>{const v=nm.trim();if(v&&v!==name)onRename(v);};
+  const done=()=>{commit();onClose();};
   return(
     <div onPointerDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()}
       style={{position:"absolute",left:"100%",top:-4,marginLeft:8,zIndex:200,
         background:"#fff",border:"1px solid #E8E6E1",borderRadius:8,padding:"14px 16px",
         boxShadow:"0 8px 28px rgba(0,0,0,0.1)",minWidth:190,display:"flex",flexDirection:"column",gap:10}}>
       <input ref={ref} value={nm} onChange={e=>setNm(e.target.value)}
-        onBlur={commit} onKeyDown={e=>{if(e.key==="Enter"){commit();onClose();}if(e.key==="Escape")onClose();}}
+        onKeyDown={e=>{if(e.key==="Enter"){done();}if(e.key==="Escape")onClose();}}
         style={{fontFamily:"'Geist',sans-serif",fontSize:13,fontWeight:600,border:"1px solid #E8E6E1",borderRadius:4,
           padding:"7px 10px",color:"#1A1A1A",background:"#fff",outline:"none",width:"100%",boxSizing:"border-box"}}/>
       <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -105,6 +106,10 @@ function ItemPopover({type,name,color,onRename,onColor,onClearColor,onDelete,onC
         {del===0?<div onClick={()=>setDel(1)} style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#C5C2BC",cursor:"pointer",fontWeight:500}} onMouseEnter={e=>e.currentTarget.style.color=IO} onMouseLeave={e=>e.currentTarget.style.color="#C5C2BC"}>Delete {type}</div>
         :<div onClick={()=>{onDelete();onClose();}} style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:IO,cursor:"pointer",fontWeight:600}}>Click again to confirm</div>}
       </div>}
+      <div style={{borderTop:"1px solid #F0EDEA",paddingTop:8,display:"flex",justifyContent:"flex-end",gap:12}}>
+        <span onClick={onClose} style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#8A8780",cursor:"pointer",fontWeight:500,letterSpacing:"0.06em",textTransform:"uppercase"}}>Cancel</span>
+        <span onClick={done} style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#1A1A1A",cursor:"pointer",fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase"}}>Done</span>
+      </div>
     </div>
   );
 }
