@@ -28,21 +28,22 @@ function isLight(h){if(!h||h.length<7)return true;const r=parseInt(h.slice(1,3),
 function hexRgba(h,a){if(!h||h.length<7)return`rgba(0,0,0,${a})`;return`rgba(${parseInt(h.slice(1,3),16)},${parseInt(h.slice(3,5),16)},${parseInt(h.slice(5,7),16)},${a})`;}
 
 const STYLE_KEYS=["default","active","tentative","hold","soft","filled","muted","custom"];
-function getVis(si,tc,phc){
+function getVis(si,tc,phc,projColor){
   /* custom/rainbow: phase-level color override */
   if(si===7){const cc=phc||tc||"#1A1A1A";const on=isLight(cc)?"#1A1A1A":"#fff";return{border:`1.5px solid ${cc}`,bg:cc,color:on,numColor:isLight(cc)?"rgba(0,0,0,0.4)":"rgba(255,255,255,0.5)",fw:600};}
-  const c=tc||"#1A1A1A"; /* NOT IO — neutral black when no track color */
+  const fallback=tc||projColor||"#1A1A1A"; /* fall back to project color if no track color */
+  const c=fallback;
   const onC=isLight(c)?"#1A1A1A":"#fff";
   const onCsub=isLight(c)?"rgba(0,0,0,0.5)":"rgba(255,255,255,0.6)";
   switch(si){
-    case 0:return{border:`1.5px solid ${tc||"#2A2A2A"}`,bg:"#fff",color:tc||"#1A1A1A",numColor:tc||"#1A1A1A",fw:500};
+    case 0:return{border:`1.5px solid ${fallback}`,bg:"#fff",color:fallback,numColor:fallback,fw:500};
     case 1:return{border:`1.5px solid ${c}`,bg:c,color:onC,numColor:onCsub,fw:600};
-    case 2:return{border:`1.5px dashed ${tc||"#BCBCBC"}`,bg:"#fff",color:tc||"#888",numColor:tc||"#888",fw:400};
+    case 2:return{border:`1.5px dashed ${fallback}`,bg:"#fff",color:fallback,numColor:fallback,fw:400};
     case 3:return{border:`1.5px dashed ${c}`,bg:"#fff",color:c,numColor:c,fw:500,bgi:`repeating-linear-gradient(-45deg,transparent,transparent 4px,${hexRgba(c,.1)} 4px,${hexRgba(c,.1)} 5px)`};
-    case 4:return{border:`1.5px dotted ${tc||"#BCBCBC"}`,bg:"#fff",color:tc||"#BCBCBC",numColor:tc||"#BCBCBC",fw:400,fs:"italic"};
+    case 4:return{border:`1.5px dotted ${fallback}`,bg:"#fff",color:fallback,numColor:fallback,fw:400,fs:"italic"};
     case 5:return{border:"none",bg:c,color:onC,numColor:onCsub,fw:600};
     case 6:return{border:"none",bg:hexRgba(c,.25),color:c,numColor:hexRgba(c,.5),fw:500};
-    default:return getVis(0,tc);
+    default:return getVis(0,tc,phc,projColor);
   }
 }
 
