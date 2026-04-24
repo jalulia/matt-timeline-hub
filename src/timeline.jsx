@@ -364,7 +364,7 @@ export default function App(){
     if((e.key==="Backspace"||e.key==="Delete")&&!ed&&!popup&&imgSel){
       mut(d=>{d.imageNotes=(d.imageNotes||[]).filter(x=>x.id!==imgSel);});setImgSel(null);
     }
-  };window.addEventListener("keydown",fn);return()=>window.removeEventListener("keydown",fn);},[sel,ed,popup,mut,undo,redo]);
+  };window.addEventListener("keydown",fn);return()=>window.removeEventListener("keydown",fn);},[sel,ed,popup,mut,undo,redo,imgSel]);
 
   const ticks=useMemo(()=>{const w=vw.current||1200;const s=toDate(0),e=toDate(w);const out=[];
     let d=new Date(new Date(s).getFullYear(),new Date(s).getMonth(),1);
