@@ -10,6 +10,12 @@ describe("getMonthTickVisibility", () => {
     expect(getRulerTimelineWindow(240, 1200)).toEqual({ startX: -240, endX: 960 });
   });
 
+  it("includes the left-rail portion when deriving the visible ruler span", () => {
+    const { startX, endX } = getRulerTimelineWindow(320, 1036);
+    expect(startX).toBe(-320);
+    expect(endX).toBe(716);
+  });
+
   it("keeps month labels visible while they scroll across the left rail", () => {
     const result = getMonthTickVisibility({
       x: 210,
