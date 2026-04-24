@@ -555,7 +555,7 @@ export default function App(){
                     const numbered=[...track.phases].filter(p=>p.kind!=="track").sort((a,b)=>a.start-b.start);
                     const sortedIdx=numbered.findIndex(p=>p.id===ph.id)+1;
                     const showTrackTag=!isTrackKind&&!firstShown&&w>90&&!!track.name;if(showTrackTag)firstShown=true;
-                     const isHover=hover===ph.id;
+                     const isHover=hover?.id===ph.id;
                      const fmtMd=ts=>{const d=new Date(ts);return`${d.getMonth()+1}/${d.getDate()}`;};
                      return(<div key={ph.id} data-r="ph" data-id={ph.id} data-pid={proj.id} data-tid={track.id}
                        onMouseEnter={e=>{setHover({id:ph.id,w:Math.max(w,12)});setHoverPos({x:e.clientX,y:e.clientY});}}
