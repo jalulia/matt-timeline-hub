@@ -454,6 +454,40 @@ export default function App(){
       {/* Continuous black axis line under ruler — spans full width across sidebar + timeline */}
       <div style={{position:"absolute",top:HEAD+RULER_H+AXIS_H-1,left:0,right:0,height:1,background:"#1A1A1A",zIndex:11,pointerEvents:"none"}}/>
 
+      {/* GLOBAL RULER — spans full container width (sidebar + timeline) */}
+      <div style={{position:"absolute",top:HEAD,left:0,right:0,height:RULER_H,background:BG,overflow:"hidden",zIndex:12,pointerEvents:"none"}}>
+        {(()=>{
+          const cur=new Date(toDate(0));
+          const cms=new Date(cur.getFullYear(),cur.getMonth(),1).getTime();
+          const stickyOn=toX(cms)+rail<=rail+60;
+          const stickyLeft=rail+8;
+          return(<>
+            {/* sticky current month label */}
+            {stickyOn&&(
+              <div style={{position:"absolute",top:8,left:stickyLeft,fontFamily:"'Geist',sans-serif",fontSize:13,fontWeight:500,color:"#1A1A1A",whiteSpace:"nowrap",zIndex:2}}>{MONTHS[cur.getMonth()]} <span style={{color:"#A09E98",fontWeight:400}}>{cur.getFullYear()}</span></div>
+            )}
+            {ticks.map((t,i)=>{
+              const x=toX(t.ts)+rail;
+              if(x<rail-140||x>(cRef.current?.offsetWidth||1400)+40)return null;
+              if(t.t==="sun")return null;
+              if(t.t==="mo"){
+                const showLabel=x>=rail+60;
+                /* Hide preceding-month label when sticky is active to avoid layering */
+                const showPrec=x>rail+40 && !(stickyOn && x<rail+120);
+                return(<div key={`m${i}`} style={{position:"absolute",left:x,top:0,bottom:0}}>
+                  <div style={{position:"absolute",top:0,height:RULER_H,width:1,background:"#1A1A1A"}}/>
+                  {showPrec&&<div style={{position:"absolute",top:8,right:6,fontFamily:"'Geist',sans-serif",fontSize:11,fontWeight:400,color:"#C5C2BC",whiteSpace:"nowrap"}}>{t.prev}</div>}
+                  {showLabel&&<div style={{position:"absolute",top:8,left:8,fontFamily:"'Geist',sans-serif",fontSize:13,fontWeight:500,color:"#1A1A1A",whiteSpace:"nowrap"}}>{t.l} <span style={{color:"#A09E98",fontWeight:400}}>{t.yr}</span></div>}
+                </div>);
+              }
+              if(x<rail)return null;
+              if(t.f)return <div key={`d${i}`} style={{position:"absolute",left:x,bottom:0}}><div style={{position:"absolute",bottom:0,width:1,height:RULER_H,background:"#1A1A1A"}}/></div>;
+              return(<div key={`d${i}`} style={{position:"absolute",left:x,bottom:0}}><div style={{position:"absolute",bottom:0,width:1,height:t.wk?24:12,background:t.wk?"#A09E98":"#D5D2CC"}}/>{(ppd>5||t.wk)&&<div style={{position:"absolute",bottom:t.wk?28:16,left:0,transform:"translateX(-50%)",fontFamily:"'Geist Mono',monospace",fontSize:10.5,color:t.wk?"#5A5850":"#A09E98",fontWeight:t.wk?500:400,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{t.l}</div>}</div>);
+            })}
+          </>);
+        })()}
+      </div>
+
       {/* RESIZE HANDLE */}
       <div onPointerDown={e=>{
           if(e.button!==0)return;
