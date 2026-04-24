@@ -15,6 +15,59 @@ export const RULER_LEFT_PAD = 20;
 export const STICKY_MONTH_TRIGGER_X = 84;
 export const STICKY_MONTH_SAFE_ZONE_END = 152;
 
+// Stacking constants — kept here so tests can assert the ruler always
+// renders above the left rail regardless of theme/background.
+export const RAIL_Z_INDEX = 10;
+export const RULER_Z_INDEX = 12;
+
+const MS_DAY = 864e5;
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+export type RulerTick =
+  | { t: "mo"; ts: number; l: string; yr: number; prev: string }
+  | { t: "d"; ts: number; l: number; f: boolean; wk: boolean }
+  | { t: "sun"; ts: number };
+
+export function generateRulerTicks(
+  startMs: number,
+  endMs: number,
+  ppd: number,
+): RulerTick[] {
+  const out: RulerTick[] = [];
+  const s = new Date(startMs);
+  let d = new Date(s.getFullYear(), s.getMonth(), 1);
+  while (d.getTime() <= endMs + MS_DAY * 35) {
+    const prev = new Date(d.getFullYear(), d.getMonth() - 1, 1);
+    out.push({
+      t: "mo",
+      ts: d.getTime(),
+      l: MONTHS[d.getMonth()],
+      yr: d.getFullYear(),
+      prev: MONTHS[prev.getMonth()],
+    });
+    d = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+  }
+  if (ppd > 3.5) {
+    const iv = ppd > 18 ? 1 : ppd > 9 ? 7 : 14;
+    let day = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+    while (day.getTime() <= endMs + MS_DAY * 2) {
+      const dn = day.getDate();
+      const f = dn === 1;
+      const wk = dn === 8 || dn === 15 || dn === 22 || dn === 29;
+      if (iv === 1 || f || (iv <= 7 && wk)) {
+        out.push({ t: "d", ts: day.getTime(), l: dn, f, wk });
+      }
+      day = new Date(day.getTime() + MS_DAY);
+    }
+    let sd = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+    while (sd.getTime() <= endMs + MS_DAY * 2) {
+      if (sd.getDay() === 0) out.push({ t: "sun", ts: sd.getTime() });
+      sd = new Date(sd.getTime() + MS_DAY);
+    }
+  }
+  return out;
+}
+
 export function getRulerTimelineWindow(rail: number, viewportWidth: number) {
   return {
     startX: -rail,
