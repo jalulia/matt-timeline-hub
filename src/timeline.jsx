@@ -357,6 +357,36 @@ export default function App(){
     reader.readAsDataURL(file);
   },[mut,rail,toDate]);
 
+  /* Link-note drag */
+  useEffect(()=>{
+    const move=e=>{
+      const d=linkDrag.current;if(!d)return;
+      const rect=cRef.current?.getBoundingClientRect();
+      const lrect=laneRef.current?.getBoundingClientRect();
+      if(!rect||!lrect)return;
+      const xPx=e.clientX-rect.left-rail-d.offX;
+      const yPx=e.clientY-lrect.top-d.offY+(laneRef.current?.scrollTop||0);
+      mut(D=>{const n=(D.linkNotes||[]).find(x=>x.id===d.id);if(n){n.date=toDate(xPx);n.y=Math.max(20,yPx);}});
+    };
+    const up=()=>{linkDrag.current=null;};
+    window.addEventListener("pointermove",move);
+    window.addEventListener("pointerup",up);
+    return()=>{window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",up);};
+  },[toDate,mut,rail]);
+
+  const onAddLink=useCallback(()=>{
+    const raw=prompt("Paste a URL:");
+    if(!raw)return;
+    let url=raw.trim();if(!url)return;
+    if(!/^https?:\/\//i.test(url))url="https://"+url;
+    let label="Link";try{label=new URL(url).hostname.replace(/^www\./,"");}catch(e){}
+    const wpx=(cRef.current?.offsetWidth||1200)-rail;
+    const date=toDate(wpx/2);
+    const id=uid();
+    mut(D=>{D.linkNotes=D.linkNotes||[];D.linkNotes.push({id,url,label,date,y:80});});
+    setLinkSel(id);
+  },[mut,rail,toDate]);
+
   useEffect(()=>{const fn=e=>{
     if(e.key==="z"&&(e.metaKey||e.ctrlKey)&&!e.shiftKey){e.preventDefault();undo();return;}
     if((e.key==="z"&&(e.metaKey||e.ctrlKey)&&e.shiftKey)||(e.key==="y"&&(e.metaKey||e.ctrlKey))){e.preventDefault();redo();return;}
