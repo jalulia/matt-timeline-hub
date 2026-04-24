@@ -270,7 +270,7 @@ export default function App(){
     if(ro==="ms"){e.stopPropagation();return;}
     if(ro==="tbg"){const s=snap(toDate(x));dr.current={type:"cr",pid:t.dataset.pid,tid:t.dataset.tid,s,c:s,x0:e.clientX};setSel(null);return e.stopPropagation();}
     if(ro==="mbg"){const dt=snap(toDate(x));const id=uid();mut(d=>d.milestones.push({id,name:"Milestone",date:dt}));setEd({type:"ms",id});setSel({type:"ms",id,sc:"g"});return;}
-    dr.current={type:"pan",x0:e.clientX,sx0:sx};setSel(null);setPopup(null);setShowMenu(false);
+    dr.current={type:"pan",x0:e.clientX,sx0:sx};setSel(null);setPopup(null);setShowMenu(false);setImgSel(null);
   },[sx,ppd,toDate,mut,rail]);
 
   const onMove=useCallback(e=>{const d=dr.current;if(!d)return;const dx=e.clientX-d.x0;
