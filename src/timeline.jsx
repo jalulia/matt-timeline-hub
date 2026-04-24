@@ -218,7 +218,7 @@ export default function App(){
   const toX=useCallback(ts=>((ts-ORIGIN)/MS_DAY)*ppd-sx,[sx,ppd]);
   const toDate=useCallback(x=>((x+sx)/ppd)*MS_DAY+ORIGIN,[sx,ppd]);
 
-  const onWheel=useCallback(e=>{if(e.metaKey||e.ctrlKey){e.preventDefault();const r=cRef.current.getBoundingClientRect();const mx=e.clientX-r.left-rail;const db=toDate(mx);const f=e.deltaY>0?.92:1.08;const np=clamp(ppd*f,1.5,60);setSx(((db-ORIGIN)/MS_DAY)*np-mx);setPpd(np);}else setSx(p=>p+e.deltaX+e.deltaY*.5);},[ppd,toDate,rail]);
+  const onWheel=useCallback(e=>{if(e.metaKey||e.ctrlKey){e.preventDefault();const r=cRef.current.getBoundingClientRect();const mx=e.clientX-r.left-rail;const db=toDate(mx);const f=e.deltaY>0?.92:1.08;const np=clamp(ppd*f,1.5,60);setSx(((db-ORIGIN)/MS_DAY)*np-mx);setPpd(np);return;}/* prevent browser back/forward swipe on horizontal trackpad scroll */if(Math.abs(e.deltaX)>0)e.preventDefault();setSx(p=>p+e.deltaX+e.deltaY*.5);},[ppd,toDate,rail]);
 
   const gid=el=>({id:el.dataset.id,pid:el.dataset.pid,tid:el.dataset.tid});
   const moveMilestoneToClientX=useCallback((clientX,id)=>{
