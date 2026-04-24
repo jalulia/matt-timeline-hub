@@ -659,12 +659,14 @@ export default function App(){
               }}
               onDoubleClick={e=>{e.stopPropagation();window.open(n.url,"_blank","noopener");}}
               style={{position:"absolute",left:x,top:n.y,transform:"translate(-50%,-50%)",
-                display:"inline-flex",alignItems:"center",gap:5,padding:"3px 8px",borderRadius:999,
-                background:"#fff",border:`1.5px solid ${isSel?IO:"#002FA7"}`,color:isSel?IO:"#002FA7",
-                fontFamily:"'Geist Mono',monospace",fontSize:8.5,fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase",
+                display:"inline-flex",alignItems:"center",gap:4,padding:"2px 7px",borderRadius:999,
+                background:"#fff",border:`1.25px solid ${isSel?IO:"#002FA7"}`,color:isSel?IO:"#002FA7",
+                fontFamily:"'Geist Mono',monospace",fontSize:7.2,fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase",
                 cursor:"grab",zIndex:isSel?20:7,whiteSpace:"nowrap",boxShadow:isSel?`0 0 0 3px ${IO_LIGHT}`:"0 1px 3px rgba(0,0,0,0.04)"}}>
-              <span style={{maxWidth:128,overflow:"hidden",textOverflow:"ellipsis"}}>{n.label||"Link"}</span>
-              <span style={{fontSize:8,opacity:.8}}>↗</span>
+              <span style={{maxWidth:108,overflow:"hidden",textOverflow:"ellipsis"}}>{n.label||"Link"}</span>
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>
+                <path d="M7 17L17 7"/><path d="M8 7h9v9"/>
+              </svg>
               {isSel&&<div onPointerDown={e=>{e.stopPropagation();mut(d=>{d.linkNotes=(d.linkNotes||[]).filter(x=>x.id!==n.id);});setLinkSel(null);}}
                 style={{position:"absolute",top:-9,right:-9,width:18,height:18,borderRadius:"50%",background:"#fff",border:`1.5px solid ${IO}`,color:IO,fontSize:11,lineHeight:"15px",textAlign:"center",cursor:"pointer",fontWeight:600}}>×</div>}
             </div>);
