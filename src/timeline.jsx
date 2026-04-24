@@ -127,6 +127,7 @@ export default function App(){
   const[popup,setPopup]=useState(null);
   const[pv,setPv]=useState(null);
   const[hover,setHover]=useState(null);
+  const[hoverPos,setHoverPos]=useState({x:0,y:0});
   const[clock,setClock]=useState("");
   const[saveStatus,setSaveStatus]=useState("");
   const[showMenu,setShowMenu]=useState(false);
@@ -527,13 +528,12 @@ export default function App(){
                     const row=st.rowFor.get(ph.id)||0;const isSel2=sel?.type==="ph"&&sel.id===ph.id;const isEd2=ed?.type==="ph"&&ed.id===ph.id;
                     const v=getVis(ph.style||0,tc,ph.color,proj.color);const sortedIdx=[...track.phases].sort((a,b)=>a.start-b.start).findIndex(p=>p.id===ph.id)+1;
                     const showTrackTag=!firstShown&&w>90&&!!track.name;if(showTrackTag)firstShown=true;
-                    const isHover=hover===ph.id;
-                    const fmtMd=ts=>{const d=new Date(ts);return`${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")}`;};
-                    // approx fit: 7px per char for the visible label
-                    const labelChars=(showTrackTag?(track.name.length+2):0)+3+(ph.name?ph.name.length:0);
-                    const truncated=!!ph.name&&labelChars*7>w-24;
-                    return(<div key={ph.id} data-r="ph" data-id={ph.id} data-pid={proj.id} data-tid={track.id}
-                      onMouseEnter={()=>setHover(ph.id)} onMouseLeave={()=>setHover(h=>h===ph.id?null:h)}
+                     const isHover=hover===ph.id;
+                     const fmtMd=ts=>{const d=new Date(ts);return`${d.getMonth()+1}/${d.getDate()}`;};
+                     return(<div key={ph.id} data-r="ph" data-id={ph.id} data-pid={proj.id} data-tid={track.id}
+                       onMouseEnter={e=>{setHover(ph.id);setHoverPos({x:e.clientX,y:e.clientY});}}
+                       onMouseMove={e=>{if(hover===ph.id)setHoverPos({x:e.clientX,y:e.clientY});}}
+                       onMouseLeave={()=>setHover(h=>h===ph.id?null:h)}
                       style={{position:"absolute",left:x1,top:row*ROW_H+(ROW_H-BAR_H)/2,width:Math.max(w,12),height:BAR_H,
                         background:v.bg,backgroundImage:v.bgi||"none",border:isSel2?`1.5px solid ${IO}`:v.border,borderRadius:3,
                         color:v.color,fontWeight:v.fw,fontStyle:v.fs||"normal",display:"flex",alignItems:"center",padding:"0 10px 0 12px",
@@ -547,13 +547,6 @@ export default function App(){
                         {showTrackTag&&<span style={{fontFamily:"'Geist Mono',monospace",fontSize:9.5,color:v.numColor,opacity:.6,textTransform:"uppercase",letterSpacing:"0.08em",flexShrink:0,fontWeight:600}}>{track.name} ·</span>}
                         <span style={{fontFamily:"'Geist Mono',monospace",fontSize:11,color:v.numColor,flexShrink:0,fontWeight:600}}>{String(sortedIdx).padStart(2,"0")}</span>
                         {ph.name}</span>)}
-                      {isHover&&!isEd2&&(
-                        <div style={{position:"absolute",left:0,top:-26,padding:"3px 7px",background:"rgba(26,26,26,0.92)",color:"#fff",fontFamily:"'Geist Mono',monospace",fontSize:10.5,letterSpacing:"0.02em",borderRadius:3,whiteSpace:"nowrap",pointerEvents:"none",zIndex:20,fontWeight:500,maxWidth:380,overflow:"hidden",textOverflow:"ellipsis",boxShadow:"0 2px 8px rgba(0,0,0,0.12)"}}>
-                          <span style={{opacity:.7}}>{fmtMd(ph.start)} — {fmtMd(ph.end)}</span>
-                          {truncated&&ph.name&&<span style={{opacity:.55,margin:"0 6px"}}>·</span>}
-                          {truncated&&ph.name&&<span>{ph.name}</span>}
-                        </div>
-                      )}
                     </div>);
                   })}
                   {pv&&pv.pid===proj.id&&pv.tid===track.id&&(()=>{const x1=toX(pv.s),x2=toX(pv.e);return <div style={{position:"absolute",left:x1,top:(ROW_H-BAR_H)/2,width:Math.max(x2-x1,4),height:BAR_H,background:IO,opacity:.15,border:`1.5px dashed ${IO}`,borderRadius:3,pointerEvents:"none",zIndex:8}}/>;})()}
@@ -578,19 +571,26 @@ export default function App(){
       {/* STYLE PICKER — phases */}
       {sel?.type==="ph"&&(()=>{const proj=data.projects.find(p=>p.id===sel.pid);const track=proj?.tracks.find(t=>t.id===sel.tid);const ph=track?.phases.find(p=>p.id===sel.id);
         if(!ph)return null;const tc=track?.color;const pc=proj?.color;const curStyle=ph.style||0;
-        const toIso=ts=>{const d=new Date(ts);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;};
-        const fromIso=s=>{const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d).getTime();};
+        const curStart=ph.startStyle??curStyle;const curEnd=ph.endStyle??curStyle;
+        const setPhField=(field,val)=>mut(d=>{const p2=d.projects.find(p=>p.id===sel.pid)?.tracks.find(t=>t.id===sel.tid)?.phases.find(p=>p.id===sel.id);if(p2)p2[field]=val;});
+        const capRow=(label,cur,field)=>(
+          <div style={{padding:"6px 8px",display:"flex",alignItems:"center",gap:5}}>
+            <span style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#8A8780",letterSpacing:"0.08em",textTransform:"uppercase",marginRight:2,fontWeight:500,width:38}}>{label}</span>
+            {STYLE_KEYS.map((k,i)=>{const sv=getVis(i,tc,ph.color,pc);
+              if(i===7){return(<button key={i} onClick={()=>{setPhField(field,7);if(!ph.color)setPhField("color",tc||"#E8562A");}}
+                title="custom color" style={{width:30,height:20,borderRadius:2,cursor:"pointer",
+                  background:"linear-gradient(135deg,#002FA7,#E8562A,#D4A017,#2A9D8F)",
+                  border:cur===7?`2px solid ${IO}`:"1px solid #D5D2CC",transform:cur===7?"scale(1.15)":"scale(1)"}}/>);}
+              return(<button key={i} onClick={()=>setPhField(field,i)}
+                title={k} style={{width:30,height:20,background:sv.bg,backgroundImage:sv.bgi||"none",borderRadius:2,
+                  border:i===cur?`2px solid ${IO}`:(sv.border||"1px solid #D5D2CC"),cursor:"pointer",transform:i===cur?"scale(1.15)":"scale(1)"}}/>);})}
+          </div>
+        );
         return(<div onPointerDown={e=>e.stopPropagation()} style={{position:"fixed",bottom:44,left:"50%",transform:"translateX(-50%)",display:"flex",flexDirection:"column",gap:0,zIndex:50,background:"#fff",border:"1.5px solid #1A1A1A",borderRadius:4,boxShadow:"0 4px 16px rgba(0,0,0,0.08)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,padding:"6px 10px",borderBottom:"1px solid #E8E6E1"}}>
-          <span style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#8A8780",letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:500}}>Start</span>
-          <input type="date" value={toIso(ph.start)} onChange={e=>{const ns=fromIso(e.target.value);mut(d=>{const p2=d.projects.find(p=>p.id===sel.pid)?.tracks.find(t=>t.id===sel.tid)?.phases.find(p=>p.id===sel.id);if(p2){p2.start=Math.min(ns,p2.end-MS_DAY);}});}}
-            style={{fontFamily:"'Geist Mono',monospace",fontSize:11,border:"1px solid #E8E6E1",borderRadius:3,padding:"3px 6px",color:"#1A1A1A",background:"#fff",outline:"none"}}/>
-          <span style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#8A8780",letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:500,marginLeft:4}}>End</span>
-          <input type="date" value={toIso(ph.end)} onChange={e=>{const ne=fromIso(e.target.value);mut(d=>{const p2=d.projects.find(p=>p.id===sel.pid)?.tracks.find(t=>t.id===sel.tid)?.phases.find(p=>p.id===sel.id);if(p2){p2.end=Math.max(ne,p2.start+MS_DAY);}});}}
-            style={{fontFamily:"'Geist Mono',monospace",fontSize:11,border:"1px solid #E8E6E1",borderRadius:3,padding:"3px 6px",color:"#1A1A1A",background:"#fff",outline:"none"}}/>
-        </div>
+        <div style={{borderBottom:"1px solid #E8E6E1"}}>{capRow("Start",curStart,"startStyle")}</div>
+        <div style={{borderBottom:"1px solid #E8E6E1"}}>{capRow("End",curEnd,"endStyle")}</div>
         <div style={{padding:"6px 8px",display:"flex",alignItems:"center",gap:5}}>
-          <span style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#8A8780",letterSpacing:"0.08em",textTransform:"uppercase",marginRight:2,fontWeight:500}}>Style</span>
+          <span style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#8A8780",letterSpacing:"0.08em",textTransform:"uppercase",marginRight:2,fontWeight:500,width:38}}>Style</span>
           {STYLE_KEYS.map((k,i)=>{const sv=getVis(i,tc,ph.color,pc);
             if(i===7){/* custom/rainbow swatch */
               return(<button key={i} onClick={()=>mut(d=>{const p2=d.projects.find(p=>p.id===sel.pid)?.tracks.find(t=>t.id===sel.tid)?.phases.find(p=>p.id===sel.id);if(p2){p2.style=7;if(!p2.color)p2.color=tc||"#E8562A";};})}
@@ -640,6 +640,19 @@ export default function App(){
             <span onClick={()=>{mut(d=>{d.milestones=d.milestones.filter(m=>m.id!==sel.id);});setSel(null);setMsDel(0);}}
               style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:IO,letterSpacing:"0.05em",fontWeight:600,cursor:"pointer",marginLeft:4,paddingLeft:4,textTransform:"uppercase"}}>Confirm?</span>
           )}
+        </div>);
+      })()}
+
+      {/* PHASE HOVER TOOLTIP — follows cursor */}
+      {hover&&(()=>{
+        let hp=null,htr=null;
+        for(const p of data.projects){for(const t of p.tracks){const f=t.phases.find(x=>x.id===hover);if(f){hp=f;htr=t;break;}}if(hp)break;}
+        if(!hp)return null;
+        const fmt=ts=>{const d=new Date(ts);return`${d.getMonth()+1}/${d.getDate()}`;};
+        const MAX=42;const nm=hp.name||"";const trim=nm.length>MAX?nm.slice(0,MAX)+"…":nm;
+        return(<div style={{position:"fixed",left:hoverPos.x+14,top:hoverPos.y+16,padding:"5px 10px",background:"#fff",border:"1px solid #D5D2CC",borderRadius:14,fontFamily:"'Geist Mono',monospace",fontSize:11.5,color:"#1A1A1A",letterSpacing:"0.01em",whiteSpace:"nowrap",pointerEvents:"none",zIndex:100,boxShadow:"0 2px 8px rgba(0,0,0,0.06)",fontWeight:500}}>
+          <span style={{fontWeight:600}}>{fmt(hp.start)}–{fmt(hp.end)}</span>
+          {nm&&<span style={{marginLeft:8,fontWeight:400}}>{trim}</span>}
         </div>);
       })()}
     </div>
