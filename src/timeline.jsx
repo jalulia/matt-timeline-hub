@@ -320,9 +320,11 @@ export default function App(){
   useEffect(()=>{
     const move=e=>{
       const d=imgDrag.current;if(!d)return;
-      const rect=cRef.current?.getBoundingClientRect();if(!rect)return;
+      const rect=cRef.current?.getBoundingClientRect();
+      const lrect=laneRef.current?.getBoundingClientRect();
+      if(!rect||!lrect)return;
       const xPx=e.clientX-rect.left-rail-d.offX;
-      const yPx=e.clientY-rect.top-HEAD-RULER_H-AXIS_H-msH-d.offY+(laneRef.current?.scrollTop||0);
+      const yPx=e.clientY-lrect.top-d.offY+(laneRef.current?.scrollTop||0);
       const newDate=toDate(xPx);
       mut(D=>{const n=(D.imageNotes||[]).find(x=>x.id===d.id);if(n){n.date=newDate;n.y=Math.max(20,yPx);}});
     };
@@ -330,7 +332,7 @@ export default function App(){
     window.addEventListener("pointermove",move);
     window.addEventListener("pointerup",up);
     return()=>{window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",up);};
-  },[toDate,mut,rail,msH]);
+  },[toDate,mut,rail]);
 
   const onImagePicked=useCallback((file)=>{
     if(!file)return;
