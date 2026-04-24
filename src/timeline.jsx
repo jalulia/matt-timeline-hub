@@ -379,7 +379,7 @@ export default function App(){
               <div style={{position:"absolute",top:0,left:0,right:0,height:PROJ_HEAD,display:"flex",alignItems:"center",gap:8,padding:"0 20px"}}>
                 <div style={{width:3,height:16,background:proj.color||"#1A1A1A",borderRadius:1,flexShrink:0,cursor:"pointer"}}
                   onClick={()=>setPopup(popup?.type==="proj"&&popup.pid===proj.id?null:{type:"proj",pid:proj.id})}/>
-                <span style={{fontSize:15,fontWeight:600,letterSpacing:"-0.02em",cursor:"pointer",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:"#1A1A1A"}}
+                <span style={{fontSize:15,fontWeight:600,letterSpacing:"-0.02em",cursor:"pointer",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:proj.color||"#1A1A1A"}}
                   onDoubleClick={()=>setPopup(popup?.type==="proj"&&popup.pid===proj.id?null:{type:"proj",pid:proj.id})}>{proj.name||<span style={{color:"#C5C2BC",fontStyle:"italic",fontWeight:400}}>Untitled</span>}</span>
                 {popup?.type==="proj"&&popup.pid===proj.id&&(
                   <ItemPopover type="project" name={proj.name} color={proj.color}
