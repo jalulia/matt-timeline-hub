@@ -561,7 +561,11 @@ export default function App(){
                 for(let j=i+1;j<ticks.length;j++){
                   if(ticks[j].t==="mo"){nextTickX=toX(ticks[j].ts)+rail;break;}
                 }
-                const visibility=getMonthTickVisibility({x,viewportWidth,stickyOn,stickyZoneEnd:STICKY_MONTH_SAFE_ZONE_END,nextTickX});
+                let prevTickX;
+                for(let j=i-1;j>=0;j--){
+                  if(ticks[j].t==="mo"){prevTickX=toX(ticks[j].ts)+rail;break;}
+                }
+                const visibility=getMonthTickVisibility({x,viewportWidth,stickyOn,stickyZoneEnd:STICKY_MONTH_SAFE_ZONE_END,nextTickX,prevTickX});
                 if(!visibility.shouldRender)return null;
                 return(<div key={`m${i}`} style={{position:"absolute",left:x,top:0,bottom:0}}>
                   <div style={{position:"absolute",top:0,height:RULER_H,width:1,background:"#1A1A1A"}}/>
