@@ -668,7 +668,7 @@ export default function App(){
                 <path d="M7 17L17 7"/><path d="M8 7h9v9"/>
               </svg>
               {isSel&&<div onPointerDown={e=>{e.stopPropagation();mut(d=>{d.linkNotes=(d.linkNotes||[]).filter(x=>x.id!==n.id);});setLinkSel(null);}}
-                style={{position:"absolute",top:-9,right:-9,width:18,height:18,borderRadius:"50%",background:"#fff",border:`1.5px solid ${IO}`,color:IO,fontSize:11,lineHeight:"15px",textAlign:"center",cursor:"pointer",fontWeight:600}}>×</div>}
+                style={{position:"absolute",top:-5,right:-5,width:9,height:9,borderRadius:"50%",background:"#fff",border:`1px solid ${IO}`,color:IO,fontSize:7,lineHeight:"7px",textAlign:"center",cursor:"pointer",fontWeight:600}}>×</div>}
             </div>);
           })}
           {layout.length===0&&(<div style={{position:"absolute",top:"40%",left:"50%",transform:"translate(-50%,-50%)",textAlign:"center",pointerEvents:"none"}}>
