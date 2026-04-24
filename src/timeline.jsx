@@ -16,11 +16,11 @@ const RAIL_MIN = 180;
 const RAIL_MAX = 520;
 const HEAD = 48;
 const RULER_H = 60;
-const AXIS_H = 6;
+const AXIS_H = 0;
 const BAR_H = 30;
 const ROW_H = 44;
-const ROW_PAD = 10;
-const PROJ_HEAD = 34;
+const ROW_PAD = 22;
+const PROJ_HEAD = 44;
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const ORIGIN = new Date(2024, 0, 1).getTime();
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -30,6 +30,8 @@ const snap = ts => { const d = new Date(ts + MS_DAY/2); d.setHours(0,0,0,0); ret
 
 const IO = "#FF4F00";
 const IO_LIGHT = "#FFF0E8";
+const LINK_BLUE = "#002FA7";
+const LINK_BLUE_LIGHT = "rgba(0, 47, 167, 0.12)";
 
 function isLight(h){if(!h||h.length<7)return true;const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return(r*.299+g*.587+b*.114)>150;}
 function hexRgba(h,a){if(!h||h.length<7)return`rgba(0,0,0,${a})`;return`rgba(${parseInt(h.slice(1,3),16)},${parseInt(h.slice(3,5),16)},${parseInt(h.slice(5,7),16)},${a})`;}
@@ -476,8 +478,8 @@ export default function App(){
       {/* SIDEBAR */}
       <div style={{position:"absolute",top:HEAD+RULER_H,left:0,width:rail,bottom:0,borderRight:"1px solid #E0DDD7",zIndex:10,background:SIDE_BG,display:"flex",flexDirection:"column"}} onPointerDown={e=>e.stopPropagation()}>
         {/* Ruler/axis area is transparent so the continuous black axis line spans full width */}
-        <div style={{height:AXIS_H,background:"transparent",pointerEvents:"none"}}/>
-        <div style={{height:msH,borderBottom:"1px solid #E0DDD7",display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"0 20px"}}>
+         <div style={{height:AXIS_H,background:"transparent",pointerEvents:"none"}}/>
+         <div style={{height:msH,borderBottom:"1px solid #E0DDD7",display:"flex",alignItems:"center",justifyContent:"flex-start",padding:"0 20px 0 31px"}}>
           <span style={{fontFamily:"'Geist Mono',monospace",fontSize:9.5,color:"#A09E98",letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:500}}>Milestones</span>
         </div>
 
@@ -518,7 +520,7 @@ export default function App(){
                 </div>
               ))}
 
-              <div style={{position:"absolute",bottom:8,left:32,right:8}}>
+              <div style={{position:"absolute",bottom:12,left:32,right:8}}>
                 <span style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#C5C2BC",cursor:"pointer",letterSpacing:"0.05em",fontWeight:500}}
                   onClick={()=>{const id=uid();mut(d=>{const p=d.projects.find(pp=>pp.id===proj.id);if(p)p.tracks.push({id,name:"",phases:[]});});setPopup({type:"trk",pid:proj.id,tid:id});}}
                   onMouseEnter={e=>e.currentTarget.style.color=IO} onMouseLeave={e=>e.currentTarget.style.color="#C5C2BC"}>+ track</span>
@@ -535,11 +537,8 @@ export default function App(){
         </div>
       </div>
 
-      {/* Continuous black axis line under ruler — spans full width across sidebar + timeline */}
-      <div style={{position:"absolute",top:HEAD+RULER_H+AXIS_H-1,left:0,right:0,height:1,background:"#1A1A1A",zIndex:11,pointerEvents:"none"}}/>
-
       {/* GLOBAL RULER — spans full container width (sidebar + timeline) */}
-      <div style={{position:"absolute",top:HEAD,left:0,right:0,height:RULER_H,background:BG,overflow:"hidden",zIndex:12,pointerEvents:"none"}}>
+      <div style={{position:"absolute",top:HEAD,left:0,right:0,height:RULER_H,background:BG,overflow:"hidden",zIndex:12,pointerEvents:"none",borderBottom:"1px solid #1A1A1A"}}>
         {(()=>{
           const viewportWidth=cRef.current?.offsetWidth||1400;
           const rulerWindow=getRulerTimelineWindow(rail,viewportWidth);
@@ -595,7 +594,7 @@ export default function App(){
 
         {/* spacer for ruler+axis (the actual ruler is rendered globally so it spans full width) */}
         <div style={{height:RULER_H,background:BG,zIndex:3,position:"relative"}}/>
-        <div style={{height:AXIS_H,borderBottom:"1px solid #1A1A1A",position:"relative",background:BG,zIndex:3}}>
+        <div style={{height:AXIS_H,position:"relative",background:"transparent",zIndex:3}}>
           {todayX>-4&&todayX<(vw.current||1200)+4&&(<div style={{position:"absolute",top:-1,left:todayX,width:8,height:8,background:IO,borderRadius:"50%",transform:"translateX(-50%)",zIndex:4}}/>)}
         </div>
 
@@ -668,15 +667,15 @@ export default function App(){
               onDoubleClick={e=>{e.stopPropagation();window.open(n.url,"_blank","noopener");}}
               style={{position:"absolute",left:x,top:n.y,transform:"translate(-50%,-50%)",
                 display:"inline-flex",alignItems:"center",gap:4,padding:"2px 7px",borderRadius:999,
-                background:"#fff",border:`1.25px solid ${isSel?IO:"#002FA7"}`,color:isSel?IO:"#002FA7",
+                background:"#fff",border:`1.25px solid ${LINK_BLUE}`,color:LINK_BLUE,
                 fontFamily:"'Geist Mono',monospace",fontSize:7.2,fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase",
-                cursor:"grab",zIndex:isSel?20:7,whiteSpace:"nowrap",boxShadow:isSel?`0 0 0 3px ${IO_LIGHT}`:"0 1px 3px rgba(0,0,0,0.04)"}}>
+                cursor:"grab",zIndex:isSel?20:7,whiteSpace:"nowrap",boxShadow:isSel?`0 0 0 3px ${LINK_BLUE_LIGHT}`:"0 1px 3px rgba(0,0,0,0.04)"}}>
               <span style={{maxWidth:108,overflow:"hidden",textOverflow:"ellipsis"}}>{n.label||"Link"}</span>
               <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>
                 <path d="M7 17L17 7"/><path d="M8 7h9v9"/>
               </svg>
               {isSel&&<div onPointerDown={e=>{e.stopPropagation();mut(d=>{d.linkNotes=(d.linkNotes||[]).filter(x=>x.id!==n.id);});setLinkSel(null);}}
-                style={{position:"absolute",top:-5,right:-5,width:9,height:9,borderRadius:"50%",background:"#fff",border:`1px solid ${IO}`,color:IO,fontSize:7,lineHeight:"7px",textAlign:"center",cursor:"pointer",fontWeight:600}}>×</div>}
+                style={{position:"absolute",top:-5,right:-5,width:9,height:9,borderRadius:"50%",background:"#fff",border:`1px solid ${LINK_BLUE}`,color:LINK_BLUE,fontSize:7,lineHeight:"7px",textAlign:"center",cursor:"pointer",fontWeight:600}}>×</div>}
             </div>);
           })}
           {layout.length===0&&(<div style={{position:"absolute",top:"40%",left:"50%",transform:"translate(-50%,-50%)",textAlign:"center",pointerEvents:"none"}}>
