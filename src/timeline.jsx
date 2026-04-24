@@ -571,19 +571,26 @@ export default function App(){
       {/* STYLE PICKER — phases */}
       {sel?.type==="ph"&&(()=>{const proj=data.projects.find(p=>p.id===sel.pid);const track=proj?.tracks.find(t=>t.id===sel.tid);const ph=track?.phases.find(p=>p.id===sel.id);
         if(!ph)return null;const tc=track?.color;const pc=proj?.color;const curStyle=ph.style||0;
-        const toIso=ts=>{const d=new Date(ts);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;};
-        const fromIso=s=>{const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d).getTime();};
+        const curStart=ph.startStyle??curStyle;const curEnd=ph.endStyle??curStyle;
+        const setPhField=(field,val)=>mut(d=>{const p2=d.projects.find(p=>p.id===sel.pid)?.tracks.find(t=>t.id===sel.tid)?.phases.find(p=>p.id===sel.id);if(p2)p2[field]=val;});
+        const capRow=(label,cur,field)=>(
+          <div style={{padding:"6px 8px",display:"flex",alignItems:"center",gap:5}}>
+            <span style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#8A8780",letterSpacing:"0.08em",textTransform:"uppercase",marginRight:2,fontWeight:500,width:38}}>{label}</span>
+            {STYLE_KEYS.map((k,i)=>{const sv=getVis(i,tc,ph.color,pc);
+              if(i===7){return(<button key={i} onClick={()=>{setPhField(field,7);if(!ph.color)setPhField("color",tc||"#E8562A");}}
+                title="custom color" style={{width:30,height:20,borderRadius:2,cursor:"pointer",
+                  background:"linear-gradient(135deg,#002FA7,#E8562A,#D4A017,#2A9D8F)",
+                  border:cur===7?`2px solid ${IO}`:"1px solid #D5D2CC",transform:cur===7?"scale(1.15)":"scale(1)"}}/>);}
+              return(<button key={i} onClick={()=>setPhField(field,i)}
+                title={k} style={{width:30,height:20,background:sv.bg,backgroundImage:sv.bgi||"none",borderRadius:2,
+                  border:i===cur?`2px solid ${IO}`:(sv.border||"1px solid #D5D2CC"),cursor:"pointer",transform:i===cur?"scale(1.15)":"scale(1)"}}/>);})}
+          </div>
+        );
         return(<div onPointerDown={e=>e.stopPropagation()} style={{position:"fixed",bottom:44,left:"50%",transform:"translateX(-50%)",display:"flex",flexDirection:"column",gap:0,zIndex:50,background:"#fff",border:"1.5px solid #1A1A1A",borderRadius:4,boxShadow:"0 4px 16px rgba(0,0,0,0.08)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,padding:"6px 10px",borderBottom:"1px solid #E8E6E1"}}>
-          <span style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#8A8780",letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:500}}>Start</span>
-          <input type="date" value={toIso(ph.start)} onChange={e=>{const ns=fromIso(e.target.value);mut(d=>{const p2=d.projects.find(p=>p.id===sel.pid)?.tracks.find(t=>t.id===sel.tid)?.phases.find(p=>p.id===sel.id);if(p2){p2.start=Math.min(ns,p2.end-MS_DAY);}});}}
-            style={{fontFamily:"'Geist Mono',monospace",fontSize:11,border:"1px solid #E8E6E1",borderRadius:3,padding:"3px 6px",color:"#1A1A1A",background:"#fff",outline:"none"}}/>
-          <span style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#8A8780",letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:500,marginLeft:4}}>End</span>
-          <input type="date" value={toIso(ph.end)} onChange={e=>{const ne=fromIso(e.target.value);mut(d=>{const p2=d.projects.find(p=>p.id===sel.pid)?.tracks.find(t=>t.id===sel.tid)?.phases.find(p=>p.id===sel.id);if(p2){p2.end=Math.max(ne,p2.start+MS_DAY);}});}}
-            style={{fontFamily:"'Geist Mono',monospace",fontSize:11,border:"1px solid #E8E6E1",borderRadius:3,padding:"3px 6px",color:"#1A1A1A",background:"#fff",outline:"none"}}/>
-        </div>
+        <div style={{borderBottom:"1px solid #E8E6E1"}}>{capRow("Start",curStart,"startStyle")}</div>
+        <div style={{borderBottom:"1px solid #E8E6E1"}}>{capRow("End",curEnd,"endStyle")}</div>
         <div style={{padding:"6px 8px",display:"flex",alignItems:"center",gap:5}}>
-          <span style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#8A8780",letterSpacing:"0.08em",textTransform:"uppercase",marginRight:2,fontWeight:500}}>Style</span>
+          <span style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#8A8780",letterSpacing:"0.08em",textTransform:"uppercase",marginRight:2,fontWeight:500,width:38}}>Style</span>
           {STYLE_KEYS.map((k,i)=>{const sv=getVis(i,tc,ph.color,pc);
             if(i===7){/* custom/rainbow swatch */
               return(<button key={i} onClick={()=>mut(d=>{const p2=d.projects.find(p=>p.id===sel.pid)?.tracks.find(t=>t.id===sel.tid)?.phases.find(p=>p.id===sel.id);if(p2){p2.style=7;if(!p2.color)p2.color=tc||"#E8562A";};})}
