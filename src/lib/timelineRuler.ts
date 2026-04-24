@@ -6,6 +6,9 @@ export type MonthTickVisibilityInput = {
   /** x of the next month tick, used to suppress this month's main label when it
    *  would collide with the next month's main label. */
   nextTickX?: number;
+  /** x of the previous month tick, used to suppress this month's preview label
+   *  when it would collide with the previous month's main label. */
+  prevTickX?: number;
 };
 
 export type MonthTickVisibility = {
@@ -20,6 +23,9 @@ export const STICKY_MONTH_SAFE_ZONE_END = 152;
 /** Approximate rendered width of a "Mon YYYY" main label, plus its 8px left
  *  inset and a small breathing gap. Used for collision suppression. */
 export const MONTH_LABEL_MIN_GAP = 72;
+/** Min gap between a month tick and the previous one before this tick's
+ *  previous-month preview label would overlap the prior month's main label. */
+export const PREV_PREVIEW_MIN_GAP = 104;
 
 // Stacking constants — kept here so tests can assert the ruler always
 // renders above the left rail regardless of theme/background.
@@ -87,6 +93,7 @@ export function getMonthTickVisibility({
   stickyOn,
   stickyZoneEnd = STICKY_MONTH_SAFE_ZONE_END,
   nextTickX,
+  prevTickX,
 }: MonthTickVisibilityInput): MonthTickVisibility {
   const shouldRender = x >= -132 && x <= viewportWidth + 40;
 
@@ -101,9 +108,11 @@ export function getMonthTickVisibility({
   // the two labels would overlap.
   const tooCloseToNext =
     typeof nextTickX === "number" && nextTickX - x < MONTH_LABEL_MIN_GAP;
+  const tooCloseToPrev =
+    typeof prevTickX === "number" && x - prevTickX < PREV_PREVIEW_MIN_GAP;
 
   const showMonthLabel = baseShowMonth && !tooCloseToNext;
-  const showPrevLabel = baseShowPrev;
+  const showPrevLabel = baseShowPrev && !tooCloseToPrev;
 
   return { shouldRender, showMonthLabel, showPrevLabel };
 }
