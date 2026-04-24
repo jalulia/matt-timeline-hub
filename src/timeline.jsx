@@ -475,18 +475,27 @@ export default function App(){
           {data.milestones.map(ms=>{
             const x=toX(ms.date);if(x<-100||x>(vw.current||1200)+100)return null;
             const row=msS.rowFor.get(ms.id)||0;const isSel=sel?.type==="ms"&&sel.id===ms.id;const isEd=ed?.type==="ms"&&ed.id===ms.id;
-            return(<div key={ms.id} data-r="ms" data-id={ms.id} data-sc="g"
-              onPointerDown={e=>{if(!isEd)startMilestoneDrag(e,ms.id,"g");}}
-              onMouseDown={e=>{if(!isEd)startMilestoneDrag(e,ms.id,"g");}}
-              onDoubleClick={e=>{e.stopPropagation();if(!isEd)setEd({type:"ms",id:ms.id});}}
-              onDragStart={e=>e.preventDefault()}
-              style={{position:"absolute",left:x-12,top:10+row*32,display:"flex",alignItems:"center",gap:8,cursor:isEd?"text":"grab",zIndex:isSel?10:1,height:24,whiteSpace:"nowrap",padding:"6px 12px 6px 8px",margin:"-6px -12px -6px -8px",borderRadius:6,touchAction:"none"}}>
-              <div style={{width:10,height:10,transform:"rotate(45deg)",flexShrink:0,background:isSel?(ms.color||IO):BG,border:`1.5px solid ${ms.color||IO}`,boxShadow:isSel?`0 0 0 3px ${IO_LIGHT}`:"none",pointerEvents:"none"}}/>
-              {isEd?(<Edit value={ms.name} onDone={v=>{mut(d=>{const m=d.milestones.find(mm=>mm.id===ms.id);if(m)m.name=v;});setEd(null);}} style={{fontFamily:"'Geist Mono',monospace",fontSize:12,width:110}}/>
-              ):(<span style={{fontFamily:"'Geist Mono',monospace",fontSize:12,pointerEvents:"none"}}>
-                <span style={{color:"#8A8780",fontWeight:500}}>{new Date(ms.date).getDate()}</span>
-                <span style={{color:"#C5C2BC",margin:"0 5px"}}>·</span>
-                <span style={{color:"#1A1A1A",fontWeight:isSel?600:500}}>{ms.name}</span></span>)}
+            const handlers={
+              onPointerDown:e=>{if(!isEd)startMilestoneDrag(e,ms.id,"g");},
+              onMouseDown:e=>{if(!isEd)startMilestoneDrag(e,ms.id,"g");},
+              onDoubleClick:e=>{e.stopPropagation();if(!isEd)setEd({type:"ms",id:ms.id});},
+              onDragStart:e=>e.preventDefault(),
+            };
+            return(<div key={ms.id} style={{position:"absolute",left:0,top:10+row*32,height:24,zIndex:isSel?10:1,pointerEvents:"none"}}>
+              {/* diamond — centered exactly on the date tick */}
+              <div data-r="ms" data-id={ms.id} data-sc="g" {...handlers}
+                style={{position:"absolute",left:x-7,top:1,width:14,height:22,display:"flex",alignItems:"center",justifyContent:"center",cursor:isEd?"text":"grab",pointerEvents:"auto",touchAction:"none"}}>
+                <div style={{width:10,height:10,transform:"rotate(45deg)",background:isSel?(ms.color||IO):BG,border:`1.5px solid ${ms.color||IO}`,boxShadow:isSel?`0 0 0 3px ${IO_LIGHT}`:"none",pointerEvents:"none"}}/>
+              </div>
+              {/* label — starts to the right of the diamond */}
+              <div data-r="ms" data-id={ms.id} data-sc="g" {...handlers}
+                style={{position:"absolute",left:x+10,top:0,height:24,display:"flex",alignItems:"center",cursor:isEd?"text":"grab",whiteSpace:"nowrap",padding:"0 6px",borderRadius:4,pointerEvents:"auto",touchAction:"none"}}>
+                {isEd?(<Edit value={ms.name} onDone={v=>{mut(d=>{const m=d.milestones.find(mm=>mm.id===ms.id);if(m)m.name=v;});setEd(null);}} style={{fontFamily:"'Geist Mono',monospace",fontSize:12,width:110}}/>
+                ):(<span style={{fontFamily:"'Geist Mono',monospace",fontSize:12,pointerEvents:"none"}}>
+                  <span style={{color:"#8A8780",fontWeight:500}}>{new Date(ms.date).getDate()}</span>
+                  <span style={{color:"#C5C2BC",margin:"0 5px"}}>·</span>
+                  <span style={{color:"#1A1A1A",fontWeight:isSel?600:500}}>{ms.name}</span></span>)}
+              </div>
             </div>);
           })}
         </div>
