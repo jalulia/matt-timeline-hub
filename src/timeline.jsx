@@ -127,6 +127,7 @@ export default function App(){
   const[popup,setPopup]=useState(null);
   const[pv,setPv]=useState(null);
   const[hover,setHover]=useState(null);
+  const[hoverPos,setHoverPos]=useState({x:0,y:0});
   const[clock,setClock]=useState("");
   const[saveStatus,setSaveStatus]=useState("");
   const[showMenu,setShowMenu]=useState(false);
