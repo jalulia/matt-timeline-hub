@@ -470,31 +470,8 @@ export default function App(){
           </div>
         )}
 
-        {/* RULER */}
-        <div style={{height:RULER_H,position:"relative",overflow:"hidden",background:BG,zIndex:3}}>
-          {/* sticky current month label — visible when boundary tick is off-screen left */}
-          {(()=>{const cur=new Date(toDate(0));const monthStart=new Date(cur.getFullYear(),cur.getMonth(),1).getTime();const mx=toX(monthStart);if(mx>60)return null;return(
-            <div style={{position:"absolute",top:8,left:8,fontFamily:"'Geist',sans-serif",fontSize:13,fontWeight:500,color:"#1A1A1A",whiteSpace:"nowrap",pointerEvents:"none",zIndex:2}}>{MONTHS[cur.getMonth()]} <span style={{color:"#A09E98",fontWeight:400}}>{cur.getFullYear()}</span></div>
-          );})()}
-          {/* Compute whether the sticky label is on so preceding-month labels can drop a row to avoid crowding it */}
-          {(()=>null)()}
-          {ticks.map((t,i)=>{
-            const x=toX(t.ts);if(x<-140||x>(vw.current||1200)+40)return null;
-            if(t.t==="sun")return null;
-            if(t.t==="mo"){const showLabel=x>=60;
-              /* If sticky current-month label is showing (its month boundary is off-screen left), drop the preceding-month label below the sticky to avoid crowding it. */
-              const cur=new Date(toDate(0));const cms=new Date(cur.getFullYear(),cur.getMonth(),1).getTime();const stickyOn=toX(cms)<=60;
-              const precTop=stickyOn?28:8;
-              return(<div key={`m${i}`} style={{position:"absolute",left:x}}>
-              <div style={{position:"absolute",top:0,height:RULER_H,width:1,background:"#1A1A1A"}}/>
-              {/* preceding month muted */}
-              {x>40&&<div style={{position:"absolute",top:precTop,right:6,fontFamily:"'Geist',sans-serif",fontSize:11,fontWeight:400,color:"#C5C2BC",whiteSpace:"nowrap"}}>{t.prev}</div>}
-              {showLabel&&<div style={{position:"absolute",top:8,left:8,fontFamily:"'Geist',sans-serif",fontSize:13,fontWeight:500,color:"#1A1A1A",whiteSpace:"nowrap"}}>{t.l} <span style={{color:"#A09E98",fontWeight:400}}>{t.yr}</span></div>}
-            </div>);}
-            if(t.f)return <div key={`d${i}`} style={{position:"absolute",left:x,bottom:0}}><div style={{position:"absolute",bottom:0,width:1,height:RULER_H,background:"#1A1A1A"}}/></div>;
-            return(<div key={`d${i}`} style={{position:"absolute",left:x,bottom:0}}><div style={{position:"absolute",bottom:0,width:1,height:t.wk?24:12,background:t.wk?"#A09E98":"#D5D2CC"}}/>{(ppd>5||t.wk)&&<div style={{position:"absolute",bottom:t.wk?28:16,left:0,transform:"translateX(-50%)",fontFamily:"'Geist Mono',monospace",fontSize:10.5,color:t.wk?"#5A5850":"#A09E98",fontWeight:t.wk?500:400,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{t.l}</div>}</div>);
-          })}
-        </div>
+        {/* spacer for ruler+axis (the actual ruler is rendered globally so it spans full width) */}
+        <div style={{height:RULER_H,background:BG,zIndex:3,position:"relative"}}/>
         <div style={{height:AXIS_H,borderBottom:"1px solid #1A1A1A",position:"relative",background:BG,zIndex:3}}>
           {todayX>-4&&todayX<(vw.current||1200)+4&&(<div style={{position:"absolute",top:-1,left:todayX,width:8,height:8,background:IO,borderRadius:"50%",transform:"translateX(-50%)",zIndex:4}}/>)}
         </div>
