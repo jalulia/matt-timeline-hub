@@ -218,7 +218,23 @@ export default function App(){
   const toX=useCallback(ts=>((ts-ORIGIN)/MS_DAY)*ppd-sx,[sx,ppd]);
   const toDate=useCallback(x=>((x+sx)/ppd)*MS_DAY+ORIGIN,[sx,ppd]);
 
-  const onWheel=useCallback(e=>{if(e.metaKey||e.ctrlKey){e.preventDefault();const r=cRef.current.getBoundingClientRect();const mx=e.clientX-r.left-rail;const db=toDate(mx);const f=e.deltaY>0?.92:1.08;const np=clamp(ppd*f,1.5,60);setSx(((db-ORIGIN)/MS_DAY)*np-mx);setPpd(np);}else setSx(p=>p+e.deltaX+e.deltaY*.5);},[ppd,toDate,rail]);
+  /* Non-passive wheel: must use addEventListener to call preventDefault and block browser back/forward swipe */
+  useEffect(()=>{
+    const el=cRef.current;if(!el)return;
+    const handler=e=>{
+      if(e.metaKey||e.ctrlKey){
+        e.preventDefault();
+        const r=el.getBoundingClientRect();const mx=e.clientX-r.left-rail;const db=toDate(mx);
+        const f=e.deltaY>0?.92:1.08;const np=clamp(ppd*f,1.5,60);
+        setSx(((db-ORIGIN)/MS_DAY)*np-mx);setPpd(np);return;
+      }
+      /* always preventDefault so horizontal trackpad swipes don't trigger browser back/forward */
+      e.preventDefault();
+      setSx(p=>p+e.deltaX+e.deltaY*.5);
+    };
+    el.addEventListener("wheel",handler,{passive:false});
+    return()=>el.removeEventListener("wheel",handler);
+  },[ppd,toDate,rail]);
 
   const gid=el=>({id:el.dataset.id,pid:el.dataset.pid,tid:el.dataset.tid});
   const moveMilestoneToClientX=useCallback((clientX,id)=>{
@@ -334,7 +350,7 @@ export default function App(){
   const BG="#fff";const SIDE_BG="#F8F7F5";
 
   return(
-    <div ref={cRef} onWheel={onWheel} onPointerDown={onDown} style={{
+    <div ref={cRef} onPointerDown={onDown} style={{
       position:"fixed",inset:0,overflow:"hidden",background:BG,
       fontFamily:"'Geist','Helvetica Neue',system-ui,sans-serif",fontSize:13,color:"#1A1A1A",
       userSelect:"none",WebkitUserSelect:"none",WebkitFontSmoothing:"antialiased",
@@ -526,8 +542,12 @@ export default function App(){
                     const x1=toX(ph.start),x2=toX(ph.end),w=x2-x1;
                     if(x2<-60||x1>(vw.current||1200)+60)return null;
                     const row=st.rowFor.get(ph.id)||0;const isSel2=sel?.type==="ph"&&sel.id===ph.id;const isEd2=ed?.type==="ph"&&ed.id===ph.id;
-                    const v=getVis(ph.style||0,tc,ph.color,proj.color);const sortedIdx=[...track.phases].sort((a,b)=>a.start-b.start).findIndex(p=>p.id===ph.id)+1;
-                    const showTrackTag=!firstShown&&w>90&&!!track.name;if(showTrackTag)firstShown=true;
+                    const v=getVis(ph.style||0,tc,ph.color,proj.color);
+                    const isTrackKind=ph.kind==="track";
+                    /* sequential number ignores track-kind phases */
+                    const numbered=[...track.phases].filter(p=>p.kind!=="track").sort((a,b)=>a.start-b.start);
+                    const sortedIdx=numbered.findIndex(p=>p.id===ph.id)+1;
+                    const showTrackTag=!isTrackKind&&!firstShown&&w>90&&!!track.name;if(showTrackTag)firstShown=true;
                      const isHover=hover===ph.id;
                      const fmtMd=ts=>{const d=new Date(ts);return`${d.getMonth()+1}/${d.getDate()}`;};
                      return(<div key={ph.id} data-r="ph" data-id={ph.id} data-pid={proj.id} data-tid={track.id}
@@ -543,9 +563,13 @@ export default function App(){
                       <div data-r="phl" data-id={ph.id} data-pid={proj.id} data-tid={track.id} style={{position:"absolute",top:0,bottom:0,left:0,width:10,cursor:"ew-resize"}}/>
                       <div data-r="phr" data-id={ph.id} data-pid={proj.id} data-tid={track.id} style={{position:"absolute",top:0,bottom:0,right:0,width:10,cursor:"ew-resize"}}/>
                       {isEd2?(<Edit value={ph.name} onDone={vl=>{mut(d=>{const tr2=d.projects.find(p=>p.id===proj.id)?.tracks.find(t=>t.id===track.id);const p2=tr2?.phases.find(p=>p.id===ph.id);if(p2)p2.name=vl;});setEd(null);}} style={{fontSize:13,fontWeight:v.fw,color:v.color}}/>
-                      ):(<span style={{overflow:"hidden",textOverflow:"ellipsis",pointerEvents:"none",display:"flex",alignItems:"center",gap:6}}>
+                       ):(<span style={{overflow:"hidden",textOverflow:"ellipsis",pointerEvents:"none",display:"flex",alignItems:"center",gap:6}}>
                         {showTrackTag&&<span style={{fontFamily:"'Geist Mono',monospace",fontSize:9.5,color:v.numColor,opacity:.6,textTransform:"uppercase",letterSpacing:"0.08em",flexShrink:0,fontWeight:600}}>{track.name} ·</span>}
-                        <span style={{fontFamily:"'Geist Mono',monospace",fontSize:11,color:v.numColor,flexShrink:0,fontWeight:600}}>{String(sortedIdx).padStart(2,"0")}</span>
+                        {isTrackKind?(
+                          <span style={{fontFamily:"'Geist Mono',monospace",fontSize:11,color:v.numColor,flexShrink:0,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em"}}>{track.name||"—"}</span>
+                        ):(
+                          <span style={{fontFamily:"'Geist Mono',monospace",fontSize:11,color:v.numColor,flexShrink:0,fontWeight:600}}>{String(sortedIdx).padStart(2,"0")}</span>
+                        )}
                         {ph.name}</span>)}
                     </div>);
                   })}
@@ -571,25 +595,17 @@ export default function App(){
       {/* STYLE PICKER — phases */}
       {sel?.type==="ph"&&(()=>{const proj=data.projects.find(p=>p.id===sel.pid);const track=proj?.tracks.find(t=>t.id===sel.tid);const ph=track?.phases.find(p=>p.id===sel.id);
         if(!ph)return null;const tc=track?.color;const pc=proj?.color;const curStyle=ph.style||0;
-        const curStart=ph.startStyle??curStyle;const curEnd=ph.endStyle??curStyle;
         const setPhField=(field,val)=>mut(d=>{const p2=d.projects.find(p=>p.id===sel.pid)?.tracks.find(t=>t.id===sel.tid)?.phases.find(p=>p.id===sel.id);if(p2)p2[field]=val;});
-        const capRow=(label,cur,field)=>(
-          <div style={{padding:"6px 8px",display:"flex",alignItems:"center",gap:5}}>
-            <span style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#8A8780",letterSpacing:"0.08em",textTransform:"uppercase",marginRight:2,fontWeight:500,width:38}}>{label}</span>
-            {STYLE_KEYS.map((k,i)=>{const sv=getVis(i,tc,ph.color,pc);
-              if(i===7){return(<button key={i} onClick={()=>{setPhField(field,7);if(!ph.color)setPhField("color",tc||"#E8562A");}}
-                title="custom color" style={{width:30,height:20,borderRadius:2,cursor:"pointer",
-                  background:"linear-gradient(135deg,#002FA7,#E8562A,#D4A017,#2A9D8F)",
-                  border:cur===7?`2px solid ${IO}`:"1px solid #D5D2CC",transform:cur===7?"scale(1.15)":"scale(1)"}}/>);}
-              return(<button key={i} onClick={()=>setPhField(field,i)}
-                title={k} style={{width:30,height:20,background:sv.bg,backgroundImage:sv.bgi||"none",borderRadius:2,
-                  border:i===cur?`2px solid ${IO}`:(sv.border||"1px solid #D5D2CC"),cursor:"pointer",transform:i===cur?"scale(1.15)":"scale(1)"}}/>);})}
-          </div>
-        );
-        return(<div onPointerDown={e=>e.stopPropagation()} style={{position:"fixed",bottom:44,left:"50%",transform:"translateX(-50%)",display:"flex",flexDirection:"column",gap:0,zIndex:50,background:"#fff",border:"1.5px solid #1A1A1A",borderRadius:4,boxShadow:"0 4px 16px rgba(0,0,0,0.08)"}}>
-        <div style={{borderBottom:"1px solid #E8E6E1"}}>{capRow("Start",curStart,"startStyle")}</div>
-        <div style={{borderBottom:"1px solid #E8E6E1"}}>{capRow("End",curEnd,"endStyle")}</div>
-        <div style={{padding:"6px 8px",display:"flex",alignItems:"center",gap:5}}>
+        const kind=ph.kind||"phase";
+        const kindBtn=(label,val)=>{const on=kind===val;return(
+          <button key={val} onClick={()=>setPhField("kind",val)} style={{
+            fontFamily:"'Geist Mono',monospace",fontSize:10,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600,
+            padding:"4px 10px",borderRadius:999,cursor:"pointer",
+            background:"#fff",color:on?IO:"#7A7770",
+            border:on?`1.5px solid ${IO}`:"1px solid #D5D2CC"
+          }}>{label}</button>);};
+        return(<div onPointerDown={e=>e.stopPropagation()} style={{position:"fixed",bottom:44,left:"50%",transform:"translateX(-50%)",display:"flex",alignItems:"center",gap:8,zIndex:50}}>
+        <div style={{display:"flex",alignItems:"center",gap:5,padding:"6px 8px",background:"#fff",border:"1.5px solid #1A1A1A",borderRadius:4,boxShadow:"0 4px 16px rgba(0,0,0,0.08)"}}>
           <span style={{fontFamily:"'Geist Mono',monospace",fontSize:10,color:"#8A8780",letterSpacing:"0.08em",textTransform:"uppercase",marginRight:2,fontWeight:500,width:38}}>Style</span>
           {STYLE_KEYS.map((k,i)=>{const sv=getVis(i,tc,ph.color,pc);
             if(i===7){/* custom/rainbow swatch */
@@ -608,6 +624,10 @@ export default function App(){
               onChange={e=>mut(d=>{const p2=d.projects.find(p=>p.id===sel.pid)?.tracks.find(t=>t.id===sel.tid)?.phases.find(p=>p.id===sel.id);if(p2)p2.color=e.target.value;})}
               style={{width:26,height:20,border:"none",padding:0,cursor:"pointer",borderRadius:2,background:"none"}}/>
           </>)}
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:4}}>
+          {kindBtn("Track","track")}
+          {kindBtn("Phase","phase")}
         </div>
         </div>);
       })()}
