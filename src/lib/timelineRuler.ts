@@ -1,8 +1,8 @@
 export type MonthTickVisibilityInput = {
   x: number;
-  rail: number;
   viewportWidth: number;
   stickyOn: boolean;
+  stickyZoneEnd?: number;
 };
 
 export type MonthTickVisibility = {
@@ -11,11 +11,22 @@ export type MonthTickVisibility = {
   showPrevLabel: boolean;
 };
 
+export const RULER_LEFT_PAD = 20;
+export const STICKY_MONTH_TRIGGER_X = 84;
+export const STICKY_MONTH_SAFE_ZONE_END = 152;
+
+export function getRulerTimelineWindow(rail: number, viewportWidth: number) {
+  return {
+    startX: -rail,
+    endX: viewportWidth - rail,
+  };
+}
+
 export function getMonthTickVisibility({
   x,
-  rail,
   viewportWidth,
   stickyOn,
+  stickyZoneEnd = STICKY_MONTH_SAFE_ZONE_END,
 }: MonthTickVisibilityInput): MonthTickVisibility {
   const shouldRender = x >= -132 && x <= viewportWidth + 40;
 
@@ -23,8 +34,8 @@ export function getMonthTickVisibility({
     return { shouldRender: false, showMonthLabel: false, showPrevLabel: false };
   }
 
-  const showMonthLabel = stickyOn ? x >= rail + 60 : x >= 8;
-  const showPrevLabel = stickyOn ? x >= rail + 120 : x > 40;
+  const showMonthLabel = stickyOn ? x >= stickyZoneEnd : x >= 8;
+  const showPrevLabel = stickyOn ? x >= stickyZoneEnd : x > 40;
 
   return { shouldRender, showMonthLabel, showPrevLabel };
 }
