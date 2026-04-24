@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getMonthTickVisibility } from "@/lib/timelineRuler";
+import {
+  getMonthTickVisibility,
+  getRulerTimelineWindow,
+  RULER_LEFT_PAD,
+  STICKY_MONTH_SAFE_ZONE_END,
+  STICKY_MONTH_TRIGGER_X,
+} from "@/lib/timelineRuler";
 
 const DOC_ID = "shared";
 
@@ -535,11 +541,13 @@ export default function App(){
       {/* GLOBAL RULER — spans full container width (sidebar + timeline) */}
       <div style={{position:"absolute",top:HEAD,left:0,right:0,height:RULER_H,background:BG,overflow:"hidden",zIndex:12,pointerEvents:"none"}}>
         {(()=>{
-          const cur=new Date(toDate(0));
-          const cms=new Date(cur.getFullYear(),cur.getMonth(),1).getTime();
-          const stickyOn=toX(cms)+rail<=rail+60;
-          const stickyLeft=rail+8;
           const viewportWidth=cRef.current?.offsetWidth||1400;
+          const rulerWindow=getRulerTimelineWindow(rail,viewportWidth);
+          const cur=new Date(toDate(rulerWindow.startX));
+          const cms=new Date(cur.getFullYear(),cur.getMonth(),1).getTime();
+          const stickyMonthX=toX(cms)+rail;
+          const stickyOn=stickyMonthX<=STICKY_MONTH_TRIGGER_X;
+          const stickyLeft=rail+8;
           return(<>
             {/* sticky current month label */}
             {stickyOn&&(
@@ -549,7 +557,7 @@ export default function App(){
               const x=toX(t.ts)+rail;
               if(t.t==="sun")return null;
               if(t.t==="mo"){
-                const visibility=getMonthTickVisibility({x,rail,viewportWidth,stickyOn});
+                const visibility=getMonthTickVisibility({x,viewportWidth,stickyOn,stickyZoneEnd:STICKY_MONTH_SAFE_ZONE_END});
                 if(!visibility.shouldRender)return null;
                 return(<div key={`m${i}`} style={{position:"absolute",left:x,top:0,bottom:0}}>
                   <div style={{position:"absolute",top:0,height:RULER_H,width:1,background:"#1A1A1A"}}/>
@@ -557,7 +565,7 @@ export default function App(){
                   {visibility.showMonthLabel&&<div style={{position:"absolute",top:8,left:8,fontFamily:"'Geist',sans-serif",fontSize:13,fontWeight:500,color:"#1A1A1A",whiteSpace:"nowrap"}}>{t.l} <span style={{color:"#A09E98",fontWeight:400}}>{t.yr}</span></div>}
                 </div>);
               }
-              if(x<0)return null;
+              if(x<-(rail+RULER_LEFT_PAD))return null;
               if(t.f)return <div key={`d${i}`} style={{position:"absolute",left:x,bottom:0}}><div style={{position:"absolute",bottom:0,width:1,height:RULER_H,background:"#1A1A1A"}}/></div>;
               return(<div key={`d${i}`} style={{position:"absolute",left:x,bottom:0}}><div style={{position:"absolute",bottom:0,width:1,height:t.wk?24:12,background:t.wk?"#A09E98":"#D5D2CC"}}/>{(ppd>5||t.wk)&&<div style={{position:"absolute",bottom:t.wk?28:16,left:0,transform:"translateX(-50%)",fontFamily:"'Geist Mono',monospace",fontSize:10.5,color:t.wk?"#5A5850":"#A09E98",fontWeight:t.wk?500:400,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{t.l}</div>}</div>);
             })}
