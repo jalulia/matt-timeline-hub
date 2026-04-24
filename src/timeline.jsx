@@ -54,7 +54,7 @@ const SEED={milestones:[
   {id:uid(),name:"CL cutoff",date:new Date(2026,3,24).getTime()},
   {id:uid(),name:"Dossier lock",date:new Date(2026,3,25).getTime()},
   {id:uid(),name:"Sample deadline",date:new Date(2026,4,2).getTime()},
-],imageNotes:[],projects:[{id:"yoshi",name:"Yoshi",color:"#E8562A",tracks:[
+],imageNotes:[],linkNotes:[],projects:[{id:"yoshi",name:"Yoshi",color:"#E8562A",tracks:[
   {id:"t1",name:"Build",color:"#002FA7",phases:[
     {id:uid(),name:"Plan & Dossier",start:new Date(2026,3,17).getTime(),end:new Date(2026,3,22).getTime(),style:1},
     {id:uid(),name:"Sample & Order",start:new Date(2026,3,22).getTime(),end:new Date(2026,3,29).getTime(),style:0},
@@ -136,6 +136,8 @@ export default function App(){
   const fileInputRef=useRef(null);
   const imgDrag=useRef(null);
   const[imgSel,setImgSel]=useState(null);
+  const linkDrag=useRef(null);
+  const[linkSel,setLinkSel]=useState(null);
   const cRef=useRef(null);const dr=useRef(null);const vw=useRef(1200);const saveTimer=useRef(null);
   const msDrag=useRef(null);
   const sideRef=useRef(null);const laneRef=useRef(null);const scrollLock=useRef(false);
@@ -270,7 +272,7 @@ export default function App(){
     if(ro==="ms"){e.stopPropagation();return;}
     if(ro==="tbg"){const s=snap(toDate(x));dr.current={type:"cr",pid:t.dataset.pid,tid:t.dataset.tid,s,c:s,x0:e.clientX};setSel(null);return e.stopPropagation();}
     if(ro==="mbg"){const dt=snap(toDate(x));const id=uid();mut(d=>d.milestones.push({id,name:"Milestone",date:dt}));setEd({type:"ms",id});setSel({type:"ms",id,sc:"g"});return;}
-    dr.current={type:"pan",x0:e.clientX,sx0:sx};setSel(null);setPopup(null);setShowMenu(false);setImgSel(null);
+    dr.current={type:"pan",x0:e.clientX,sx0:sx};setSel(null);setPopup(null);setShowMenu(false);setImgSel(null);setLinkSel(null);
   },[sx,ppd,toDate,mut,rail]);
 
   const onMove=useCallback(e=>{const d=dr.current;if(!d)return;const dx=e.clientX-d.x0;
@@ -320,9 +322,11 @@ export default function App(){
   useEffect(()=>{
     const move=e=>{
       const d=imgDrag.current;if(!d)return;
-      const rect=cRef.current?.getBoundingClientRect();if(!rect)return;
+      const rect=cRef.current?.getBoundingClientRect();
+      const lrect=laneRef.current?.getBoundingClientRect();
+      if(!rect||!lrect)return;
       const xPx=e.clientX-rect.left-rail-d.offX;
-      const yPx=e.clientY-rect.top-HEAD-RULER_H-AXIS_H-msH-d.offY+(laneRef.current?.scrollTop||0);
+      const yPx=e.clientY-lrect.top-d.offY+(laneRef.current?.scrollTop||0);
       const newDate=toDate(xPx);
       mut(D=>{const n=(D.imageNotes||[]).find(x=>x.id===d.id);if(n){n.date=newDate;n.y=Math.max(20,yPx);}});
     };
@@ -330,7 +334,7 @@ export default function App(){
     window.addEventListener("pointermove",move);
     window.addEventListener("pointerup",up);
     return()=>{window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",up);};
-  },[toDate,mut,rail,msH]);
+  },[toDate,mut,rail]);
 
   const onImagePicked=useCallback((file)=>{
     if(!file)return;
@@ -353,6 +357,36 @@ export default function App(){
     reader.readAsDataURL(file);
   },[mut,rail,toDate]);
 
+  /* Link-note drag */
+  useEffect(()=>{
+    const move=e=>{
+      const d=linkDrag.current;if(!d)return;
+      const rect=cRef.current?.getBoundingClientRect();
+      const lrect=laneRef.current?.getBoundingClientRect();
+      if(!rect||!lrect)return;
+      const xPx=e.clientX-rect.left-rail-d.offX;
+      const yPx=e.clientY-lrect.top-d.offY+(laneRef.current?.scrollTop||0);
+      mut(D=>{const n=(D.linkNotes||[]).find(x=>x.id===d.id);if(n){n.date=toDate(xPx);n.y=Math.max(20,yPx);}});
+    };
+    const up=()=>{linkDrag.current=null;};
+    window.addEventListener("pointermove",move);
+    window.addEventListener("pointerup",up);
+    return()=>{window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",up);};
+  },[toDate,mut,rail]);
+
+  const onAddLink=useCallback(()=>{
+    const raw=prompt("Paste a URL:");
+    if(!raw)return;
+    let url=raw.trim();if(!url)return;
+    if(!/^https?:\/\//i.test(url))url="https://"+url;
+    let label="Link";try{label=new URL(url).hostname.replace(/^www\./,"");}catch(e){}
+    const wpx=(cRef.current?.offsetWidth||1200)-rail;
+    const date=toDate(wpx/2);
+    const id=uid();
+    mut(D=>{D.linkNotes=D.linkNotes||[];D.linkNotes.push({id,url,label,date,y:80});});
+    setLinkSel(id);
+  },[mut,rail,toDate]);
+
   useEffect(()=>{const fn=e=>{
     if(e.key==="z"&&(e.metaKey||e.ctrlKey)&&!e.shiftKey){e.preventDefault();undo();return;}
     if((e.key==="z"&&(e.metaKey||e.ctrlKey)&&e.shiftKey)||(e.key==="y"&&(e.metaKey||e.ctrlKey))){e.preventDefault();redo();return;}
@@ -360,11 +394,14 @@ export default function App(){
       if(sel.type==="ph")mut(d=>{const tr=d.projects.find(p=>p.id===sel.pid)?.tracks.find(t=>t.id===sel.tid);if(tr)tr.phases=tr.phases.filter(p=>p.id!==sel.id);});
       else if(sel.type==="ms"&&sel.sc==="g")mut(d=>{d.milestones=d.milestones.filter(m=>m.id!==sel.id);});
       setSel(null);}
-    if(e.key==="Escape"){setSel(null);setEd(null);setPopup(null);setShowMenu(false);setImgSel(null);}
+    if(e.key==="Escape"){setSel(null);setEd(null);setPopup(null);setShowMenu(false);setImgSel(null);setLinkSel(null);}
     if((e.key==="Backspace"||e.key==="Delete")&&!ed&&!popup&&imgSel){
       mut(d=>{d.imageNotes=(d.imageNotes||[]).filter(x=>x.id!==imgSel);});setImgSel(null);
     }
-  };window.addEventListener("keydown",fn);return()=>window.removeEventListener("keydown",fn);},[sel,ed,popup,mut,undo,redo,imgSel]);
+    if((e.key==="Backspace"||e.key==="Delete")&&!ed&&!popup&&linkSel){
+      mut(d=>{d.linkNotes=(d.linkNotes||[]).filter(x=>x.id!==linkSel);});setLinkSel(null);
+    }
+  };window.addEventListener("keydown",fn);return()=>window.removeEventListener("keydown",fn);},[sel,ed,popup,mut,undo,redo,imgSel,linkSel]);
 
   const ticks=useMemo(()=>{const w=vw.current||1200;const s=toDate(0),e=toDate(w);const out=[];
     let d=new Date(new Date(s).getFullYear(),new Date(s).getMonth(),1);
@@ -608,6 +645,30 @@ export default function App(){
                 style={{position:"absolute",top:-9,right:-9,width:18,height:18,borderRadius:"50%",background:"#fff",border:`1.5px solid ${IO}`,color:IO,fontSize:11,lineHeight:"15px",textAlign:"center",cursor:"pointer",fontFamily:"'Geist Mono',monospace",fontWeight:600}}>×</div>}
             </div>);
           })}
+          {/* LINK NOTES — pill-style anchored notes */}
+          {(data.linkNotes||[]).map(n=>{
+            const x=toX(n.date);
+            if(x<-200||x>(vw.current||1200)+200)return null;
+            const isSel=linkSel===n.id;
+            return(<div key={n.id}
+              onPointerDown={e=>{
+                if(e.button!==0)return;e.stopPropagation();setLinkSel(n.id);
+                const rect=cRef.current.getBoundingClientRect();
+                const lrect=laneRef.current.getBoundingClientRect();
+                linkDrag.current={id:n.id,offX:e.clientX-(rect.left+rail+x),offY:e.clientY-(lrect.top+(n.y-(laneRef.current?.scrollTop||0)))};
+              }}
+              onDoubleClick={e=>{e.stopPropagation();window.open(n.url,"_blank","noopener");}}
+              style={{position:"absolute",left:x,top:n.y,transform:"translate(-50%,-50%)",
+                display:"inline-flex",alignItems:"center",gap:6,padding:"4px 10px",borderRadius:999,
+                background:"#fff",border:`1.5px solid ${isSel?IO:"#002FA7"}`,color:isSel?IO:"#002FA7",
+                fontFamily:"'Geist Mono',monospace",fontSize:10.5,fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase",
+                cursor:"grab",zIndex:isSel?20:7,whiteSpace:"nowrap",boxShadow:isSel?`0 0 0 3px ${IO_LIGHT}`:"0 1px 3px rgba(0,0,0,0.04)"}}>
+              <span style={{maxWidth:160,overflow:"hidden",textOverflow:"ellipsis"}}>{n.label||"Link"}</span>
+              <span style={{fontSize:10,opacity:.8}}>↗</span>
+              {isSel&&<div onPointerDown={e=>{e.stopPropagation();mut(d=>{d.linkNotes=(d.linkNotes||[]).filter(x=>x.id!==n.id);});setLinkSel(null);}}
+                style={{position:"absolute",top:-9,right:-9,width:18,height:18,borderRadius:"50%",background:"#fff",border:`1.5px solid ${IO}`,color:IO,fontSize:11,lineHeight:"15px",textAlign:"center",cursor:"pointer",fontWeight:600}}>×</div>}
+            </div>);
+          })}
           {layout.length===0&&(<div style={{position:"absolute",top:"40%",left:"50%",transform:"translate(-50%,-50%)",textAlign:"center",pointerEvents:"none"}}>
             <div style={{fontFamily:"'Instrument Serif',serif",fontStyle:"italic",fontSize:28,color:"rgba(0,0,0,0.06)",marginBottom:6}}>Start building</div>
             <div style={{fontFamily:"'Geist Mono',monospace",fontSize:11,color:"#C5C2BC"}}>Add a project, then drag to create phases</div>
@@ -671,6 +732,10 @@ export default function App(){
             {saveStatus==="saved"&&<><span style={{color:"#D5D2CC"}}>·</span><span style={{color:"#2A9D8F"}}>Saved</span></>}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <button onPointerDown={e=>e.stopPropagation()} onClick={onAddLink}
+              style={{fontFamily:"'Geist Mono',monospace",fontSize:10,letterSpacing:"0.07em",textTransform:"uppercase",color:"#8A8780",background:"none",border:"1px solid #E0DDD7",padding:"4px 12px",cursor:"pointer",borderRadius:14,fontWeight:500}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=IO;e.currentTarget.style.color=IO;}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="#E0DDD7";e.currentTarget.style.color="#8A8780";}}>Add Link</button>
             <button onPointerDown={e=>e.stopPropagation()} onClick={()=>fileInputRef.current?.click()}
               style={{fontFamily:"'Geist Mono',monospace",fontSize:10,letterSpacing:"0.07em",textTransform:"uppercase",color:"#8A8780",background:"none",border:"1px solid #E0DDD7",padding:"4px 12px",cursor:"pointer",borderRadius:14,fontWeight:500}}
               onMouseEnter={e=>{e.currentTarget.style.borderColor=IO;e.currentTarget.style.color=IO;}}
