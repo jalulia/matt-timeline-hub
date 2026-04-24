@@ -394,9 +394,12 @@ export default function App(){
       if(sel.type==="ph")mut(d=>{const tr=d.projects.find(p=>p.id===sel.pid)?.tracks.find(t=>t.id===sel.tid);if(tr)tr.phases=tr.phases.filter(p=>p.id!==sel.id);});
       else if(sel.type==="ms"&&sel.sc==="g")mut(d=>{d.milestones=d.milestones.filter(m=>m.id!==sel.id);});
       setSel(null);}
-    if(e.key==="Escape"){setSel(null);setEd(null);setPopup(null);setShowMenu(false);setImgSel(null);}
+    if(e.key==="Escape"){setSel(null);setEd(null);setPopup(null);setShowMenu(false);setImgSel(null);setLinkSel(null);}
     if((e.key==="Backspace"||e.key==="Delete")&&!ed&&!popup&&imgSel){
       mut(d=>{d.imageNotes=(d.imageNotes||[]).filter(x=>x.id!==imgSel);});setImgSel(null);
+    }
+    if((e.key==="Backspace"||e.key==="Delete")&&!ed&&!popup&&linkSel){
+      mut(d=>{d.linkNotes=(d.linkNotes||[]).filter(x=>x.id!==linkSel);});setLinkSel(null);
     }
   };window.addEventListener("keydown",fn);return()=>window.removeEventListener("keydown",fn);},[sel,ed,popup,mut,undo,redo,imgSel]);
 
