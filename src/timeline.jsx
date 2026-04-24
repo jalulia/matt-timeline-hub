@@ -320,7 +320,7 @@ export default function App(){
     return{proj,stacks,height,trackLayout};
   }),[data]);
 
-  const msWidth=useCallback(m=>{const name=m.name||"";return 26+(String(new Date(m.date).getDate()).length)*7+10+name.length*7+8;},[]);
+  const msWidth=useCallback(m=>{const name=m.name||"";return 17+(String(new Date(m.date).getDate()).length)*7+11+name.length*7+12;},[]);
   const msS=useMemo(()=>stackMs(data.milestones,toX,msWidth),[data.milestones,toX,msWidth]);
   const msH=msS.count*32+20;
   const todayX=toX(todayTs());
