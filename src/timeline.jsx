@@ -528,13 +528,12 @@ export default function App(){
                     const row=st.rowFor.get(ph.id)||0;const isSel2=sel?.type==="ph"&&sel.id===ph.id;const isEd2=ed?.type==="ph"&&ed.id===ph.id;
                     const v=getVis(ph.style||0,tc,ph.color,proj.color);const sortedIdx=[...track.phases].sort((a,b)=>a.start-b.start).findIndex(p=>p.id===ph.id)+1;
                     const showTrackTag=!firstShown&&w>90&&!!track.name;if(showTrackTag)firstShown=true;
-                    const isHover=hover===ph.id;
-                    const fmtMd=ts=>{const d=new Date(ts);return`${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")}`;};
-                    // approx fit: 7px per char for the visible label
-                    const labelChars=(showTrackTag?(track.name.length+2):0)+3+(ph.name?ph.name.length:0);
-                    const truncated=!!ph.name&&labelChars*7>w-24;
-                    return(<div key={ph.id} data-r="ph" data-id={ph.id} data-pid={proj.id} data-tid={track.id}
-                      onMouseEnter={()=>setHover(ph.id)} onMouseLeave={()=>setHover(h=>h===ph.id?null:h)}
+                     const isHover=hover===ph.id;
+                     const fmtMd=ts=>{const d=new Date(ts);return`${d.getMonth()+1}/${d.getDate()}`;};
+                     return(<div key={ph.id} data-r="ph" data-id={ph.id} data-pid={proj.id} data-tid={track.id}
+                       onMouseEnter={e=>{setHover(ph.id);setHoverPos({x:e.clientX,y:e.clientY});}}
+                       onMouseMove={e=>{if(hover===ph.id)setHoverPos({x:e.clientX,y:e.clientY});}}
+                       onMouseLeave={()=>setHover(h=>h===ph.id?null:h)}
                       style={{position:"absolute",left:x1,top:row*ROW_H+(ROW_H-BAR_H)/2,width:Math.max(w,12),height:BAR_H,
                         background:v.bg,backgroundImage:v.bgi||"none",border:isSel2?`1.5px solid ${IO}`:v.border,borderRadius:3,
                         color:v.color,fontWeight:v.fw,fontStyle:v.fs||"normal",display:"flex",alignItems:"center",padding:"0 10px 0 12px",
@@ -548,13 +547,6 @@ export default function App(){
                         {showTrackTag&&<span style={{fontFamily:"'Geist Mono',monospace",fontSize:9.5,color:v.numColor,opacity:.6,textTransform:"uppercase",letterSpacing:"0.08em",flexShrink:0,fontWeight:600}}>{track.name} ·</span>}
                         <span style={{fontFamily:"'Geist Mono',monospace",fontSize:11,color:v.numColor,flexShrink:0,fontWeight:600}}>{String(sortedIdx).padStart(2,"0")}</span>
                         {ph.name}</span>)}
-                      {isHover&&!isEd2&&(
-                        <div style={{position:"absolute",left:0,top:-26,padding:"3px 7px",background:"rgba(26,26,26,0.92)",color:"#fff",fontFamily:"'Geist Mono',monospace",fontSize:10.5,letterSpacing:"0.02em",borderRadius:3,whiteSpace:"nowrap",pointerEvents:"none",zIndex:20,fontWeight:500,maxWidth:380,overflow:"hidden",textOverflow:"ellipsis",boxShadow:"0 2px 8px rgba(0,0,0,0.12)"}}>
-                          <span style={{opacity:.7}}>{fmtMd(ph.start)} — {fmtMd(ph.end)}</span>
-                          {truncated&&ph.name&&<span style={{opacity:.55,margin:"0 6px"}}>·</span>}
-                          {truncated&&ph.name&&<span>{ph.name}</span>}
-                        </div>
-                      )}
                     </div>);
                   })}
                   {pv&&pv.pid===proj.id&&pv.tid===track.id&&(()=>{const x1=toX(pv.s),x2=toX(pv.e);return <div style={{position:"absolute",left:x1,top:(ROW_H-BAR_H)/2,width:Math.max(x2-x1,4),height:BAR_H,background:IO,opacity:.15,border:`1.5px dashed ${IO}`,borderRadius:3,pointerEvents:"none",zIndex:8}}/>;})()}
