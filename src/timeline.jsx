@@ -301,9 +301,15 @@ export default function App(){
 
   const ticks=useMemo(()=>{const w=vw.current||1200;const s=toDate(0),e=toDate(w);const out=[];
     let d=new Date(new Date(s).getFullYear(),new Date(s).getMonth(),1);
-    while(d.getTime()<=e+MS_DAY*35){out.push({t:"mo",ts:d.getTime(),l:MONTHS[d.getMonth()],yr:d.getFullYear()});d=new Date(d.getFullYear(),d.getMonth()+1,1);}
+    while(d.getTime()<=e+MS_DAY*35){
+      const prev=new Date(d.getFullYear(),d.getMonth()-1,1);
+      out.push({t:"mo",ts:d.getTime(),l:MONTHS[d.getMonth()],yr:d.getFullYear(),prev:MONTHS[prev.getMonth()]});
+      d=new Date(d.getFullYear(),d.getMonth()+1,1);
+    }
     if(ppd>3.5){const iv=ppd>18?1:ppd>9?7:14;let day=new Date(new Date(s).getFullYear(),new Date(s).getMonth(),new Date(s).getDate());
       while(day.getTime()<=e+MS_DAY*2){const dn=day.getDate();const f=dn===1;const wk=dn===8||dn===15||dn===22||dn===29;if(iv===1||f||(iv<=7&&wk))out.push({t:"d",ts:day.getTime(),l:dn,f,wk});day=new Date(day.getTime()+MS_DAY);}}
+    if(ppd>3.5){let day=new Date(new Date(s).getFullYear(),new Date(s).getMonth(),new Date(s).getDate());
+      while(day.getTime()<=e+MS_DAY*2){if(day.getDay()===0)out.push({t:"sun",ts:day.getTime()});day=new Date(day.getTime()+MS_DAY);}}
     return out;},[sx,ppd,toDate]);
 
   const layout=useMemo(()=>data.projects.map(proj=>{
