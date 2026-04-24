@@ -667,8 +667,16 @@ export default function App(){
             <span>{data.projects.length} proj</span>
             {saveStatus==="saved"&&<><span style={{color:"#D5D2CC"}}>·</span><span style={{color:"#2A9D8F"}}>Saved</span></>}
           </div>
-          <div>{sel&&<span style={{color:IO}}>{sel.type==="ph"?"Phase":"Milestone"} — ⌫ del · dbl-click edit</span>}
-            {!sel&&<span style={{color:"#C5C2BC"}}>Drag to pan · ⌘Z undo · ⌘⇧Z redo</span>}</div>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <button onPointerDown={e=>e.stopPropagation()} onClick={()=>fileInputRef.current?.click()}
+              style={{fontFamily:"'Geist Mono',monospace",fontSize:10,letterSpacing:"0.07em",textTransform:"uppercase",color:"#8A8780",background:"none",border:"1px solid #E0DDD7",padding:"4px 12px",cursor:"pointer",borderRadius:14,fontWeight:500}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=IO;e.currentTarget.style.color=IO;}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="#E0DDD7";e.currentTarget.style.color="#8A8780";}}>Image Note</button>
+            <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml" style={{display:"none"}}
+              onChange={e=>{const f=e.target.files?.[0];onImagePicked(f);e.target.value="";}}/>
+            {sel&&<span style={{color:IO}}>{sel.type==="ph"?"Phase":"Milestone"} — ⌫ del · dbl-click edit</span>}
+            {!sel&&<span style={{color:"#C5C2BC"}}>Drag to pan · ⌘Z undo · ⌘⇧Z redo</span>}
+          </div>
         </div>
       </div>
 
