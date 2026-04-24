@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getMonthTickVisibility } from "@/lib/timelineRuler";
 
 const DOC_ID = "shared";
 
@@ -467,9 +468,9 @@ export default function App(){
       </div>
 
       {/* SIDEBAR */}
-      <div style={{position:"absolute",top:HEAD,left:0,width:rail,bottom:0,borderRight:"1px solid #E0DDD7",zIndex:10,background:SIDE_BG,display:"flex",flexDirection:"column"}} onPointerDown={e=>e.stopPropagation()}>
+      <div style={{position:"absolute",top:HEAD+RULER_H,left:0,width:rail,bottom:0,borderRight:"1px solid #E0DDD7",zIndex:10,background:SIDE_BG,display:"flex",flexDirection:"column"}} onPointerDown={e=>e.stopPropagation()}>
         {/* Ruler/axis area is transparent so the continuous black axis line spans full width */}
-        <div style={{height:RULER_H+AXIS_H,background:"transparent",pointerEvents:"none"}}/>
+        <div style={{height:AXIS_H,background:"transparent",pointerEvents:"none"}}/>
         <div style={{height:msH,borderBottom:"1px solid #E0DDD7",display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"0 20px"}}>
           <span style={{fontFamily:"'Geist Mono',monospace",fontSize:9.5,color:"#A09E98",letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:500}}>Milestones</span>
         </div>
@@ -538,6 +539,7 @@ export default function App(){
           const cms=new Date(cur.getFullYear(),cur.getMonth(),1).getTime();
           const stickyOn=toX(cms)+rail<=rail+60;
           const stickyLeft=rail+8;
+          const viewportWidth=cRef.current?.offsetWidth||1400;
           return(<>
             {/* sticky current month label */}
             {stickyOn&&(
@@ -545,17 +547,14 @@ export default function App(){
             )}
             {ticks.map((t,i)=>{
               const x=toX(t.ts)+rail;
-              if(x<rail-140||x>(cRef.current?.offsetWidth||1400)+40)return null;
               if(t.t==="sun")return null;
               if(t.t==="mo"){
-                /* Allow labels to scroll across the full width (including sidebar zone).
-                   Hide them only when they would collide with the sticky current-month label. */
-                const showLabel=stickyOn ? x>=rail+60 : x>=8;
-                const showPrec=stickyOn ? (x>rail+40 && x>=rail+120) : x>40;
+                const visibility=getMonthTickVisibility({x,rail,viewportWidth,stickyOn});
+                if(!visibility.shouldRender)return null;
                 return(<div key={`m${i}`} style={{position:"absolute",left:x,top:0,bottom:0}}>
                   <div style={{position:"absolute",top:0,height:RULER_H,width:1,background:"#1A1A1A"}}/>
-                  {showPrec&&<div style={{position:"absolute",top:8,right:6,fontFamily:"'Geist',sans-serif",fontSize:11,fontWeight:400,color:"#C5C2BC",whiteSpace:"nowrap"}}>{t.prev}</div>}
-                  {showLabel&&<div style={{position:"absolute",top:8,left:8,fontFamily:"'Geist',sans-serif",fontSize:13,fontWeight:500,color:"#1A1A1A",whiteSpace:"nowrap"}}>{t.l} <span style={{color:"#A09E98",fontWeight:400}}>{t.yr}</span></div>}
+                  {visibility.showPrevLabel&&<div style={{position:"absolute",top:8,right:6,fontFamily:"'Geist',sans-serif",fontSize:11,fontWeight:400,color:"#C5C2BC",whiteSpace:"nowrap"}}>{t.prev}</div>}
+                  {visibility.showMonthLabel&&<div style={{position:"absolute",top:8,left:8,fontFamily:"'Geist',sans-serif",fontSize:13,fontWeight:500,color:"#1A1A1A",whiteSpace:"nowrap"}}>{t.l} <span style={{color:"#A09E98",fontWeight:400}}>{t.yr}</span></div>}
                 </div>);
               }
               if(x<0)return null;
