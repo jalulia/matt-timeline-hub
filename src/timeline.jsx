@@ -555,12 +555,12 @@ export default function App(){
                     const numbered=[...track.phases].filter(p=>p.kind!=="track").sort((a,b)=>a.start-b.start);
                     const sortedIdx=numbered.findIndex(p=>p.id===ph.id)+1;
                     const showTrackTag=!isTrackKind&&!firstShown&&w>90&&!!track.name;if(showTrackTag)firstShown=true;
-                     const isHover=hover===ph.id;
+                     const isHover=hover?.id===ph.id;
                      const fmtMd=ts=>{const d=new Date(ts);return`${d.getMonth()+1}/${d.getDate()}`;};
                      return(<div key={ph.id} data-r="ph" data-id={ph.id} data-pid={proj.id} data-tid={track.id}
-                       onMouseEnter={e=>{setHover(ph.id);setHoverPos({x:e.clientX,y:e.clientY});}}
-                       onMouseMove={e=>{if(hover===ph.id)setHoverPos({x:e.clientX,y:e.clientY});}}
-                       onMouseLeave={()=>setHover(h=>h===ph.id?null:h)}
+                       onMouseEnter={e=>{setHover({id:ph.id,w:Math.max(w,12)});setHoverPos({x:e.clientX,y:e.clientY});}}
+                       onMouseMove={e=>{if(hover?.id===ph.id)setHoverPos({x:e.clientX,y:e.clientY});}}
+                       onMouseLeave={()=>setHover(h=>h?.id===ph.id?null:h)}
                       style={{position:"absolute",left:x1,top:row*ROW_H+(ROW_H-BAR_H)/2,width:Math.max(w,12),height:BAR_H,
                         background:v.bg,backgroundImage:v.bgi||"none",border:isSel2?`1.5px solid ${IO}`:v.border,borderRadius:3,
                         color:v.color,fontWeight:v.fw,fontStyle:v.fs||"normal",display:"flex",alignItems:"center",padding:"0 10px 0 12px",
@@ -673,13 +673,18 @@ export default function App(){
       {/* PHASE HOVER TOOLTIP — follows cursor */}
       {hover&&(()=>{
         let hp=null,htr=null;
-        for(const p of data.projects){for(const t of p.tracks){const f=t.phases.find(x=>x.id===hover);if(f){hp=f;htr=t;break;}}if(hp)break;}
+        for(const p of data.projects){for(const t of p.tracks){const f=t.phases.find(x=>x.id===hover.id);if(f){hp=f;htr=t;break;}}if(hp)break;}
         if(!hp)return null;
         const fmt=ts=>{const d=new Date(ts);return`${d.getMonth()+1}/${d.getDate()}`;};
         const MAX=42;const nm=hp.name||"";const trim=nm.length>MAX?nm.slice(0,MAX)+"…":nm;
+        /* Estimate whether the chip is wide enough to show the full name.
+           Chip layout: 12px left pad + ~22px for number/track tag + 6px gap + name + 10px right pad.
+           Geist ~6.6px per char at 13px. If full name fits, hide it from the tooltip. */
+        const nameFits=nm.length===0||(hp.kind!=="track"&&hover.w-50>=nm.length*6.6);
+        const showName=nm&&!nameFits;
         return(<div style={{position:"fixed",left:hoverPos.x+14,top:hoverPos.y+16,padding:"5px 10px",background:"#fff",border:"1px solid #D5D2CC",borderRadius:14,fontFamily:"'Geist Mono',monospace",fontSize:11.5,color:"#1A1A1A",letterSpacing:"0.01em",whiteSpace:"nowrap",pointerEvents:"none",zIndex:100,boxShadow:"0 2px 8px rgba(0,0,0,0.06)",fontWeight:500}}>
           <span style={{fontWeight:600}}>{fmt(hp.start)}–{fmt(hp.end)}</span>
-          {nm&&<span style={{marginLeft:8,fontWeight:400}}>{trim}</span>}
+          {showName&&<span style={{marginLeft:8,fontWeight:400}}>{trim}</span>}
         </div>);
       })()}
     </div>
