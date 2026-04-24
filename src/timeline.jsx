@@ -635,6 +635,19 @@ export default function App(){
           )}
         </div>);
       })()}
+
+      {/* PHASE HOVER TOOLTIP — follows cursor */}
+      {hover&&(()=>{
+        let hp=null,htr=null;
+        for(const p of data.projects){for(const t of p.tracks){const f=t.phases.find(x=>x.id===hover);if(f){hp=f;htr=t;break;}}if(hp)break;}
+        if(!hp)return null;
+        const fmt=ts=>{const d=new Date(ts);return`${d.getMonth()+1}/${d.getDate()}`;};
+        const MAX=42;const nm=hp.name||"";const trim=nm.length>MAX?nm.slice(0,MAX)+"…":nm;
+        return(<div style={{position:"fixed",left:hoverPos.x+14,top:hoverPos.y+16,padding:"5px 10px",background:"#fff",border:"1px solid #D5D2CC",borderRadius:14,fontFamily:"'Geist Mono',monospace",fontSize:11.5,color:"#1A1A1A",letterSpacing:"0.01em",whiteSpace:"nowrap",pointerEvents:"none",zIndex:100,boxShadow:"0 2px 8px rgba(0,0,0,0.06)",fontWeight:500}}>
+          <span style={{fontWeight:600}}>{fmt(hp.start)}–{fmt(hp.end)}</span>
+          {nm&&<span style={{marginLeft:8,fontWeight:400}}>{trim}</span>}
+        </div>);
+      })()}
     </div>
   );
 }
