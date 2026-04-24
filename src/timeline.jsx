@@ -54,7 +54,7 @@ const SEED={milestones:[
   {id:uid(),name:"CL cutoff",date:new Date(2026,3,24).getTime()},
   {id:uid(),name:"Dossier lock",date:new Date(2026,3,25).getTime()},
   {id:uid(),name:"Sample deadline",date:new Date(2026,4,2).getTime()},
-],projects:[{id:"yoshi",name:"Yoshi",color:"#E8562A",tracks:[
+],imageNotes:[],projects:[{id:"yoshi",name:"Yoshi",color:"#E8562A",tracks:[
   {id:"t1",name:"Build",color:"#002FA7",phases:[
     {id:uid(),name:"Plan & Dossier",start:new Date(2026,3,17).getTime(),end:new Date(2026,3,22).getTime(),style:1},
     {id:uid(),name:"Sample & Order",start:new Date(2026,3,22).getTime(),end:new Date(2026,3,29).getTime(),style:0},
@@ -132,6 +132,10 @@ export default function App(){
   const[saveStatus,setSaveStatus]=useState("");
   const[showMenu,setShowMenu]=useState(false);
   const[msDel,setMsDel]=useState(0);
+  const[imgMode,setImgMode]=useState(false);
+  const fileInputRef=useRef(null);
+  const imgDrag=useRef(null);
+  const[imgSel,setImgSel]=useState(null);
   const cRef=useRef(null);const dr=useRef(null);const vw=useRef(1200);const saveTimer=useRef(null);
   const msDrag=useRef(null);
   const sideRef=useRef(null);const laneRef=useRef(null);const scrollLock=useRef(false);
@@ -266,7 +270,7 @@ export default function App(){
     if(ro==="ms"){e.stopPropagation();return;}
     if(ro==="tbg"){const s=snap(toDate(x));dr.current={type:"cr",pid:t.dataset.pid,tid:t.dataset.tid,s,c:s,x0:e.clientX};setSel(null);return e.stopPropagation();}
     if(ro==="mbg"){const dt=snap(toDate(x));const id=uid();mut(d=>d.milestones.push({id,name:"Milestone",date:dt}));setEd({type:"ms",id});setSel({type:"ms",id,sc:"g"});return;}
-    dr.current={type:"pan",x0:e.clientX,sx0:sx};setSel(null);setPopup(null);setShowMenu(false);
+    dr.current={type:"pan",x0:e.clientX,sx0:sx};setSel(null);setPopup(null);setShowMenu(false);setImgSel(null);
   },[sx,ppd,toDate,mut,rail]);
 
   const onMove=useCallback(e=>{const d=dr.current;if(!d)return;const dx=e.clientX-d.x0;
@@ -312,6 +316,43 @@ export default function App(){
     };
   },[moveMilestoneToClientX,stopMilestoneDrag]);
 
+  /* Image-note drag */
+  useEffect(()=>{
+    const move=e=>{
+      const d=imgDrag.current;if(!d)return;
+      const rect=cRef.current?.getBoundingClientRect();if(!rect)return;
+      const xPx=e.clientX-rect.left-rail-d.offX;
+      const yPx=e.clientY-rect.top-HEAD-RULER_H-AXIS_H-msH-d.offY+(laneRef.current?.scrollTop||0);
+      const newDate=toDate(xPx);
+      mut(D=>{const n=(D.imageNotes||[]).find(x=>x.id===d.id);if(n){n.date=newDate;n.y=Math.max(20,yPx);}});
+    };
+    const up=()=>{imgDrag.current=null;};
+    window.addEventListener("pointermove",move);
+    window.addEventListener("pointerup",up);
+    return()=>{window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",up);};
+  },[toDate,mut,rail,msH]);
+
+  const onImagePicked=useCallback((file)=>{
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const dataUrl=reader.result;
+      const img=new Image();
+      img.onload=()=>{
+        const max=75;const r=Math.min(max/img.width,max/img.height,1);
+        const w=Math.round(img.width*r),h=Math.round(img.height*r);
+        // place near current view center
+        const wpx=(cRef.current?.offsetWidth||1200)-rail;
+        const date=toDate(wpx/2);
+        const id=uid();
+        mut(D=>{D.imageNotes=D.imageNotes||[];D.imageNotes.push({id,src:dataUrl,date,y:120,w,h});});
+        setImgSel(id);
+      };
+      img.src=dataUrl;
+    };
+    reader.readAsDataURL(file);
+  },[mut,rail,toDate]);
+
   useEffect(()=>{const fn=e=>{
     if(e.key==="z"&&(e.metaKey||e.ctrlKey)&&!e.shiftKey){e.preventDefault();undo();return;}
     if((e.key==="z"&&(e.metaKey||e.ctrlKey)&&e.shiftKey)||(e.key==="y"&&(e.metaKey||e.ctrlKey))){e.preventDefault();redo();return;}
@@ -319,8 +360,11 @@ export default function App(){
       if(sel.type==="ph")mut(d=>{const tr=d.projects.find(p=>p.id===sel.pid)?.tracks.find(t=>t.id===sel.tid);if(tr)tr.phases=tr.phases.filter(p=>p.id!==sel.id);});
       else if(sel.type==="ms"&&sel.sc==="g")mut(d=>{d.milestones=d.milestones.filter(m=>m.id!==sel.id);});
       setSel(null);}
-    if(e.key==="Escape"){setSel(null);setEd(null);setPopup(null);setShowMenu(false);}
-  };window.addEventListener("keydown",fn);return()=>window.removeEventListener("keydown",fn);},[sel,ed,popup,mut,undo,redo]);
+    if(e.key==="Escape"){setSel(null);setEd(null);setPopup(null);setShowMenu(false);setImgSel(null);}
+    if((e.key==="Backspace"||e.key==="Delete")&&!ed&&!popup&&imgSel){
+      mut(d=>{d.imageNotes=(d.imageNotes||[]).filter(x=>x.id!==imgSel);});setImgSel(null);
+    }
+  };window.addEventListener("keydown",fn);return()=>window.removeEventListener("keydown",fn);},[sel,ed,popup,mut,undo,redo,imgSel]);
 
   const ticks=useMemo(()=>{const w=vw.current||1200;const s=toDate(0),e=toDate(w);const out=[];
     let d=new Date(new Date(s).getFullYear(),new Date(s).getMonth(),1);
@@ -450,6 +494,40 @@ export default function App(){
       {/* Continuous black axis line under ruler — spans full width across sidebar + timeline */}
       <div style={{position:"absolute",top:HEAD+RULER_H+AXIS_H-1,left:0,right:0,height:1,background:"#1A1A1A",zIndex:11,pointerEvents:"none"}}/>
 
+      {/* GLOBAL RULER — spans full container width (sidebar + timeline) */}
+      <div style={{position:"absolute",top:HEAD,left:0,right:0,height:RULER_H,background:BG,overflow:"hidden",zIndex:12,pointerEvents:"none"}}>
+        {(()=>{
+          const cur=new Date(toDate(0));
+          const cms=new Date(cur.getFullYear(),cur.getMonth(),1).getTime();
+          const stickyOn=toX(cms)+rail<=rail+60;
+          const stickyLeft=rail+8;
+          return(<>
+            {/* sticky current month label */}
+            {stickyOn&&(
+              <div style={{position:"absolute",top:8,left:stickyLeft,fontFamily:"'Geist',sans-serif",fontSize:13,fontWeight:500,color:"#1A1A1A",whiteSpace:"nowrap",zIndex:2}}>{MONTHS[cur.getMonth()]} <span style={{color:"#A09E98",fontWeight:400}}>{cur.getFullYear()}</span></div>
+            )}
+            {ticks.map((t,i)=>{
+              const x=toX(t.ts)+rail;
+              if(x<rail-140||x>(cRef.current?.offsetWidth||1400)+40)return null;
+              if(t.t==="sun")return null;
+              if(t.t==="mo"){
+                const showLabel=x>=rail+60;
+                /* Hide preceding-month label when sticky is active to avoid layering */
+                const showPrec=x>rail+40 && !(stickyOn && x<rail+120);
+                return(<div key={`m${i}`} style={{position:"absolute",left:x,top:0,bottom:0}}>
+                  <div style={{position:"absolute",top:0,height:RULER_H,width:1,background:"#1A1A1A"}}/>
+                  {showPrec&&<div style={{position:"absolute",top:8,right:6,fontFamily:"'Geist',sans-serif",fontSize:11,fontWeight:400,color:"#C5C2BC",whiteSpace:"nowrap"}}>{t.prev}</div>}
+                  {showLabel&&<div style={{position:"absolute",top:8,left:8,fontFamily:"'Geist',sans-serif",fontSize:13,fontWeight:500,color:"#1A1A1A",whiteSpace:"nowrap"}}>{t.l} <span style={{color:"#A09E98",fontWeight:400}}>{t.yr}</span></div>}
+                </div>);
+              }
+              if(x<rail)return null;
+              if(t.f)return <div key={`d${i}`} style={{position:"absolute",left:x,bottom:0}}><div style={{position:"absolute",bottom:0,width:1,height:RULER_H,background:"#1A1A1A"}}/></div>;
+              return(<div key={`d${i}`} style={{position:"absolute",left:x,bottom:0}}><div style={{position:"absolute",bottom:0,width:1,height:t.wk?24:12,background:t.wk?"#A09E98":"#D5D2CC"}}/>{(ppd>5||t.wk)&&<div style={{position:"absolute",bottom:t.wk?28:16,left:0,transform:"translateX(-50%)",fontFamily:"'Geist Mono',monospace",fontSize:10.5,color:t.wk?"#5A5850":"#A09E98",fontWeight:t.wk?500:400,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{t.l}</div>}</div>);
+            })}
+          </>);
+        })()}
+      </div>
+
       {/* RESIZE HANDLE */}
       <div onPointerDown={e=>{
           if(e.button!==0)return;
@@ -470,31 +548,8 @@ export default function App(){
           </div>
         )}
 
-        {/* RULER */}
-        <div style={{height:RULER_H,position:"relative",overflow:"hidden",background:BG,zIndex:3}}>
-          {/* sticky current month label — visible when boundary tick is off-screen left */}
-          {(()=>{const cur=new Date(toDate(0));const monthStart=new Date(cur.getFullYear(),cur.getMonth(),1).getTime();const mx=toX(monthStart);if(mx>60)return null;return(
-            <div style={{position:"absolute",top:8,left:8,fontFamily:"'Geist',sans-serif",fontSize:13,fontWeight:500,color:"#1A1A1A",whiteSpace:"nowrap",pointerEvents:"none",zIndex:2}}>{MONTHS[cur.getMonth()]} <span style={{color:"#A09E98",fontWeight:400}}>{cur.getFullYear()}</span></div>
-          );})()}
-          {/* Compute whether the sticky label is on so preceding-month labels can drop a row to avoid crowding it */}
-          {(()=>null)()}
-          {ticks.map((t,i)=>{
-            const x=toX(t.ts);if(x<-140||x>(vw.current||1200)+40)return null;
-            if(t.t==="sun")return null;
-            if(t.t==="mo"){const showLabel=x>=60;
-              /* If sticky current-month label is showing (its month boundary is off-screen left), drop the preceding-month label below the sticky to avoid crowding it. */
-              const cur=new Date(toDate(0));const cms=new Date(cur.getFullYear(),cur.getMonth(),1).getTime();const stickyOn=toX(cms)<=60;
-              const precTop=stickyOn?28:8;
-              return(<div key={`m${i}`} style={{position:"absolute",left:x}}>
-              <div style={{position:"absolute",top:0,height:RULER_H,width:1,background:"#1A1A1A"}}/>
-              {/* preceding month muted */}
-              {x>40&&<div style={{position:"absolute",top:precTop,right:6,fontFamily:"'Geist',sans-serif",fontSize:11,fontWeight:400,color:"#C5C2BC",whiteSpace:"nowrap"}}>{t.prev}</div>}
-              {showLabel&&<div style={{position:"absolute",top:8,left:8,fontFamily:"'Geist',sans-serif",fontSize:13,fontWeight:500,color:"#1A1A1A",whiteSpace:"nowrap"}}>{t.l} <span style={{color:"#A09E98",fontWeight:400}}>{t.yr}</span></div>}
-            </div>);}
-            if(t.f)return <div key={`d${i}`} style={{position:"absolute",left:x,bottom:0}}><div style={{position:"absolute",bottom:0,width:1,height:RULER_H,background:"#1A1A1A"}}/></div>;
-            return(<div key={`d${i}`} style={{position:"absolute",left:x,bottom:0}}><div style={{position:"absolute",bottom:0,width:1,height:t.wk?24:12,background:t.wk?"#A09E98":"#D5D2CC"}}/>{(ppd>5||t.wk)&&<div style={{position:"absolute",bottom:t.wk?28:16,left:0,transform:"translateX(-50%)",fontFamily:"'Geist Mono',monospace",fontSize:10.5,color:t.wk?"#5A5850":"#A09E98",fontWeight:t.wk?500:400,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{t.l}</div>}</div>);
-          })}
-        </div>
+        {/* spacer for ruler+axis (the actual ruler is rendered globally so it spans full width) */}
+        <div style={{height:RULER_H,background:BG,zIndex:3,position:"relative"}}/>
         <div style={{height:AXIS_H,borderBottom:"1px solid #1A1A1A",position:"relative",background:BG,zIndex:3}}>
           {todayX>-4&&todayX<(vw.current||1200)+4&&(<div style={{position:"absolute",top:-1,left:todayX,width:8,height:8,background:IO,borderRadius:"50%",transform:"translateX(-50%)",zIndex:4}}/>)}
         </div>
@@ -532,6 +587,27 @@ export default function App(){
 
         {/* PROJECT LANES */}
         <div ref={laneRef} onScroll={()=>syncScroll("l")} style={{position:"relative",overflowY:"auto",overflowX:"hidden",height:`calc(100% - ${RULER_H+AXIS_H+msH+34}px)`}}>
+          {/* IMAGE NOTES — anchored by date+y, free-floating, non-blocking */}
+          {(data.imageNotes||[]).map(n=>{
+            const x=toX(n.date);
+            if(x<-100||x>(vw.current||1200)+100)return null;
+            const isSel=imgSel===n.id;
+            return(<div key={n.id}
+              onPointerDown={e=>{
+                if(e.button!==0)return;
+                e.stopPropagation();
+                setImgSel(n.id);
+                const rect=cRef.current.getBoundingClientRect();
+                imgDrag.current={id:n.id,offX:e.clientX-(rect.left+rail+x),offY:e.clientY-(rect.top+HEAD+RULER_H+AXIS_H+msH+(n.y-(laneRef.current?.scrollTop||0)))};
+              }}
+              style={{position:"absolute",left:x-(n.w||75)/2,top:n.y-(n.h||75)/2,width:n.w||75,height:n.h||75,cursor:"grab",zIndex:isSel?20:7,
+                border:isSel?`1.5px solid ${IO}`:"1px solid transparent",borderRadius:4,padding:0,background:"transparent",
+                boxShadow:isSel?`0 0 0 3px ${IO_LIGHT}`:"none"}}>
+              <img src={n.src} alt="" draggable={false} style={{width:"100%",height:"100%",objectFit:"contain",pointerEvents:"none",display:"block"}}/>
+              {isSel&&<div onPointerDown={e=>{e.stopPropagation();mut(d=>{d.imageNotes=(d.imageNotes||[]).filter(x=>x.id!==n.id);});setImgSel(null);}}
+                style={{position:"absolute",top:-9,right:-9,width:18,height:18,borderRadius:"50%",background:"#fff",border:`1.5px solid ${IO}`,color:IO,fontSize:11,lineHeight:"15px",textAlign:"center",cursor:"pointer",fontFamily:"'Geist Mono',monospace",fontWeight:600}}>×</div>}
+            </div>);
+          })}
           {layout.length===0&&(<div style={{position:"absolute",top:"40%",left:"50%",transform:"translate(-50%,-50%)",textAlign:"center",pointerEvents:"none"}}>
             <div style={{fontFamily:"'Instrument Serif',serif",fontStyle:"italic",fontSize:28,color:"rgba(0,0,0,0.06)",marginBottom:6}}>Start building</div>
             <div style={{fontFamily:"'Geist Mono',monospace",fontSize:11,color:"#C5C2BC"}}>Add a project, then drag to create phases</div>
@@ -594,8 +670,16 @@ export default function App(){
             <span>{data.projects.length} proj</span>
             {saveStatus==="saved"&&<><span style={{color:"#D5D2CC"}}>·</span><span style={{color:"#2A9D8F"}}>Saved</span></>}
           </div>
-          <div>{sel&&<span style={{color:IO}}>{sel.type==="ph"?"Phase":"Milestone"} — ⌫ del · dbl-click edit</span>}
-            {!sel&&<span style={{color:"#C5C2BC"}}>Drag to pan · ⌘Z undo · ⌘⇧Z redo</span>}</div>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <button onPointerDown={e=>e.stopPropagation()} onClick={()=>fileInputRef.current?.click()}
+              style={{fontFamily:"'Geist Mono',monospace",fontSize:10,letterSpacing:"0.07em",textTransform:"uppercase",color:"#8A8780",background:"none",border:"1px solid #E0DDD7",padding:"4px 12px",cursor:"pointer",borderRadius:14,fontWeight:500}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=IO;e.currentTarget.style.color=IO;}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="#E0DDD7";e.currentTarget.style.color="#8A8780";}}>Image Note</button>
+            <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml" style={{display:"none"}}
+              onChange={e=>{const f=e.target.files?.[0];onImagePicked(f);e.target.value="";}}/>
+            {sel&&<span style={{color:IO}}>{sel.type==="ph"?"Phase":"Milestone"} — ⌫ del · dbl-click edit</span>}
+            {!sel&&<span style={{color:"#C5C2BC"}}>Drag to pan · ⌘Z undo · ⌘⇧Z redo</span>}
+          </div>
         </div>
       </div>
 
