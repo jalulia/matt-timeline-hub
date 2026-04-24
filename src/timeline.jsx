@@ -542,8 +542,12 @@ export default function App(){
                     const x1=toX(ph.start),x2=toX(ph.end),w=x2-x1;
                     if(x2<-60||x1>(vw.current||1200)+60)return null;
                     const row=st.rowFor.get(ph.id)||0;const isSel2=sel?.type==="ph"&&sel.id===ph.id;const isEd2=ed?.type==="ph"&&ed.id===ph.id;
-                    const v=getVis(ph.style||0,tc,ph.color,proj.color);const sortedIdx=[...track.phases].sort((a,b)=>a.start-b.start).findIndex(p=>p.id===ph.id)+1;
-                    const showTrackTag=!firstShown&&w>90&&!!track.name;if(showTrackTag)firstShown=true;
+                    const v=getVis(ph.style||0,tc,ph.color,proj.color);
+                    const isTrackKind=ph.kind==="track";
+                    /* sequential number ignores track-kind phases */
+                    const numbered=[...track.phases].filter(p=>p.kind!=="track").sort((a,b)=>a.start-b.start);
+                    const sortedIdx=numbered.findIndex(p=>p.id===ph.id)+1;
+                    const showTrackTag=!isTrackKind&&!firstShown&&w>90&&!!track.name;if(showTrackTag)firstShown=true;
                      const isHover=hover===ph.id;
                      const fmtMd=ts=>{const d=new Date(ts);return`${d.getMonth()+1}/${d.getDate()}`;};
                      return(<div key={ph.id} data-r="ph" data-id={ph.id} data-pid={proj.id} data-tid={track.id}
@@ -559,9 +563,13 @@ export default function App(){
                       <div data-r="phl" data-id={ph.id} data-pid={proj.id} data-tid={track.id} style={{position:"absolute",top:0,bottom:0,left:0,width:10,cursor:"ew-resize"}}/>
                       <div data-r="phr" data-id={ph.id} data-pid={proj.id} data-tid={track.id} style={{position:"absolute",top:0,bottom:0,right:0,width:10,cursor:"ew-resize"}}/>
                       {isEd2?(<Edit value={ph.name} onDone={vl=>{mut(d=>{const tr2=d.projects.find(p=>p.id===proj.id)?.tracks.find(t=>t.id===track.id);const p2=tr2?.phases.find(p=>p.id===ph.id);if(p2)p2.name=vl;});setEd(null);}} style={{fontSize:13,fontWeight:v.fw,color:v.color}}/>
-                      ):(<span style={{overflow:"hidden",textOverflow:"ellipsis",pointerEvents:"none",display:"flex",alignItems:"center",gap:6}}>
+                       ):(<span style={{overflow:"hidden",textOverflow:"ellipsis",pointerEvents:"none",display:"flex",alignItems:"center",gap:6}}>
                         {showTrackTag&&<span style={{fontFamily:"'Geist Mono',monospace",fontSize:9.5,color:v.numColor,opacity:.6,textTransform:"uppercase",letterSpacing:"0.08em",flexShrink:0,fontWeight:600}}>{track.name} ·</span>}
-                        <span style={{fontFamily:"'Geist Mono',monospace",fontSize:11,color:v.numColor,flexShrink:0,fontWeight:600}}>{String(sortedIdx).padStart(2,"0")}</span>
+                        {isTrackKind?(
+                          <span style={{fontFamily:"'Geist Mono',monospace",fontSize:11,color:v.numColor,flexShrink:0,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em"}}>{track.name||"—"}</span>
+                        ):(
+                          <span style={{fontFamily:"'Geist Mono',monospace",fontSize:11,color:v.numColor,flexShrink:0,fontWeight:600}}>{String(sortedIdx).padStart(2,"0")}</span>
+                        )}
                         {ph.name}</span>)}
                     </div>);
                   })}
