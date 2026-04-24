@@ -537,11 +537,8 @@ export default function App(){
         </div>
       </div>
 
-      {/* Continuous black axis line under ruler — spans full width across sidebar + timeline */}
-      <div style={{position:"absolute",top:HEAD+RULER_H+AXIS_H-1,left:0,right:0,height:1,background:"#1A1A1A",zIndex:11,pointerEvents:"none"}}/>
-
       {/* GLOBAL RULER — spans full container width (sidebar + timeline) */}
-      <div style={{position:"absolute",top:HEAD,left:0,right:0,height:RULER_H,background:BG,overflow:"hidden",zIndex:12,pointerEvents:"none"}}>
+      <div style={{position:"absolute",top:HEAD,left:0,right:0,height:RULER_H,background:BG,overflow:"hidden",zIndex:12,pointerEvents:"none",borderBottom:"1px solid #1A1A1A"}}>
         {(()=>{
           const viewportWidth=cRef.current?.offsetWidth||1400;
           const rulerWindow=getRulerTimelineWindow(rail,viewportWidth);
@@ -597,7 +594,7 @@ export default function App(){
 
         {/* spacer for ruler+axis (the actual ruler is rendered globally so it spans full width) */}
         <div style={{height:RULER_H,background:BG,zIndex:3,position:"relative"}}/>
-        <div style={{height:AXIS_H,borderBottom:"1px solid #1A1A1A",position:"relative",background:BG,zIndex:3}}>
+        <div style={{height:AXIS_H,position:"relative",background:"transparent",zIndex:3}}>
           {todayX>-4&&todayX<(vw.current||1200)+4&&(<div style={{position:"absolute",top:-1,left:todayX,width:8,height:8,background:IO,borderRadius:"50%",transform:"translateX(-50%)",zIndex:4}}/>)}
         </div>
 
