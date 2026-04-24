@@ -548,16 +548,17 @@ export default function App(){
               if(x<rail-140||x>(cRef.current?.offsetWidth||1400)+40)return null;
               if(t.t==="sun")return null;
               if(t.t==="mo"){
-                const showLabel=x>=rail+60;
-                /* Hide preceding-month label when sticky is active to avoid layering */
-                const showPrec=x>rail+40 && !(stickyOn && x<rail+120);
+                /* Allow labels to scroll across the full width (including sidebar zone).
+                   Hide them only when they would collide with the sticky current-month label. */
+                const showLabel=stickyOn ? x>=rail+60 : x>=8;
+                const showPrec=stickyOn ? (x>rail+40 && x>=rail+120) : x>40;
                 return(<div key={`m${i}`} style={{position:"absolute",left:x,top:0,bottom:0}}>
                   <div style={{position:"absolute",top:0,height:RULER_H,width:1,background:"#1A1A1A"}}/>
                   {showPrec&&<div style={{position:"absolute",top:8,right:6,fontFamily:"'Geist',sans-serif",fontSize:11,fontWeight:400,color:"#C5C2BC",whiteSpace:"nowrap"}}>{t.prev}</div>}
                   {showLabel&&<div style={{position:"absolute",top:8,left:8,fontFamily:"'Geist',sans-serif",fontSize:13,fontWeight:500,color:"#1A1A1A",whiteSpace:"nowrap"}}>{t.l} <span style={{color:"#A09E98",fontWeight:400}}>{t.yr}</span></div>}
                 </div>);
               }
-              if(x<rail)return null;
+              if(x<0)return null;
               if(t.f)return <div key={`d${i}`} style={{position:"absolute",left:x,bottom:0}}><div style={{position:"absolute",bottom:0,width:1,height:RULER_H,background:"#1A1A1A"}}/></div>;
               return(<div key={`d${i}`} style={{position:"absolute",left:x,bottom:0}}><div style={{position:"absolute",bottom:0,width:1,height:t.wk?24:12,background:t.wk?"#A09E98":"#D5D2CC"}}/>{(ppd>5||t.wk)&&<div style={{position:"absolute",bottom:t.wk?28:16,left:0,transform:"translateX(-50%)",fontFamily:"'Geist Mono',monospace",fontSize:10.5,color:t.wk?"#5A5850":"#A09E98",fontWeight:t.wk?500:400,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{t.l}</div>}</div>);
             })}
