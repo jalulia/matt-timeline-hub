@@ -401,7 +401,7 @@ export default function App(){
     if((e.key==="Backspace"||e.key==="Delete")&&!ed&&!popup&&linkSel){
       mut(d=>{d.linkNotes=(d.linkNotes||[]).filter(x=>x.id!==linkSel);});setLinkSel(null);
     }
-  };window.addEventListener("keydown",fn);return()=>window.removeEventListener("keydown",fn);},[sel,ed,popup,mut,undo,redo,imgSel]);
+  };window.addEventListener("keydown",fn);return()=>window.removeEventListener("keydown",fn);},[sel,ed,popup,mut,undo,redo,imgSel,linkSel]);
 
   const ticks=useMemo(()=>{const w=vw.current||1200;const s=toDate(0),e=toDate(w);const out=[];
     let d=new Date(new Date(s).getFullYear(),new Date(s).getMonth(),1);
