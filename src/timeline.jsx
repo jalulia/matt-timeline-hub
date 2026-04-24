@@ -350,7 +350,7 @@ export default function App(){
   const BG="#fff";const SIDE_BG="#F8F7F5";
 
   return(
-    <div ref={cRef} onWheel={onWheel} onPointerDown={onDown} style={{
+    <div ref={cRef} onPointerDown={onDown} style={{
       position:"fixed",inset:0,overflow:"hidden",background:BG,
       fontFamily:"'Geist','Helvetica Neue',system-ui,sans-serif",fontSize:13,color:"#1A1A1A",
       userSelect:"none",WebkitUserSelect:"none",WebkitFontSmoothing:"antialiased",
