@@ -642,6 +642,30 @@ export default function App(){
                 style={{position:"absolute",top:-9,right:-9,width:18,height:18,borderRadius:"50%",background:"#fff",border:`1.5px solid ${IO}`,color:IO,fontSize:11,lineHeight:"15px",textAlign:"center",cursor:"pointer",fontFamily:"'Geist Mono',monospace",fontWeight:600}}>×</div>}
             </div>);
           })}
+          {/* LINK NOTES — pill-style anchored notes */}
+          {(data.linkNotes||[]).map(n=>{
+            const x=toX(n.date);
+            if(x<-200||x>(vw.current||1200)+200)return null;
+            const isSel=linkSel===n.id;
+            return(<div key={n.id}
+              onPointerDown={e=>{
+                if(e.button!==0)return;e.stopPropagation();setLinkSel(n.id);
+                const rect=cRef.current.getBoundingClientRect();
+                const lrect=laneRef.current.getBoundingClientRect();
+                linkDrag.current={id:n.id,offX:e.clientX-(rect.left+rail+x),offY:e.clientY-(lrect.top+(n.y-(laneRef.current?.scrollTop||0)))};
+              }}
+              onDoubleClick={e=>{e.stopPropagation();window.open(n.url,"_blank","noopener");}}
+              style={{position:"absolute",left:x,top:n.y,transform:"translate(-50%,-50%)",
+                display:"inline-flex",alignItems:"center",gap:6,padding:"4px 10px",borderRadius:999,
+                background:"#fff",border:`1.5px solid ${isSel?IO:"#002FA7"}`,color:isSel?IO:"#002FA7",
+                fontFamily:"'Geist Mono',monospace",fontSize:10.5,fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase",
+                cursor:"grab",zIndex:isSel?20:7,whiteSpace:"nowrap",boxShadow:isSel?`0 0 0 3px ${IO_LIGHT}`:"0 1px 3px rgba(0,0,0,0.04)"}}>
+              <span style={{maxWidth:160,overflow:"hidden",textOverflow:"ellipsis"}}>{n.label||"Link"}</span>
+              <span style={{fontSize:10,opacity:.8}}>↗</span>
+              {isSel&&<div onPointerDown={e=>{e.stopPropagation();mut(d=>{d.linkNotes=(d.linkNotes||[]).filter(x=>x.id!==n.id);});setLinkSel(null);}}
+                style={{position:"absolute",top:-9,right:-9,width:18,height:18,borderRadius:"50%",background:"#fff",border:`1.5px solid ${IO}`,color:IO,fontSize:11,lineHeight:"15px",textAlign:"center",cursor:"pointer",fontWeight:600}}>×</div>}
+            </div>);
+          })}
           {layout.length===0&&(<div style={{position:"absolute",top:"40%",left:"50%",transform:"translate(-50%,-50%)",textAlign:"center",pointerEvents:"none"}}>
             <div style={{fontFamily:"'Instrument Serif',serif",fontStyle:"italic",fontSize:28,color:"rgba(0,0,0,0.06)",marginBottom:6}}>Start building</div>
             <div style={{fontFamily:"'Geist Mono',monospace",fontSize:11,color:"#C5C2BC"}}>Add a project, then drag to create phases</div>
