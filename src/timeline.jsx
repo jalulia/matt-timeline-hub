@@ -447,6 +447,9 @@ export default function App(){
         </div>
       </div>
 
+      {/* Continuous black axis line under ruler — spans full width across sidebar + timeline */}
+      <div style={{position:"absolute",top:HEAD+RULER_H+AXIS_H-1,left:0,right:0,height:1,background:"#1A1A1A",zIndex:11,pointerEvents:"none"}}/>
+
       {/* RESIZE HANDLE */}
       <div onPointerDown={e=>{
           if(e.button!==0)return;
