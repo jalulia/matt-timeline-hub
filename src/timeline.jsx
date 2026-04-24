@@ -316,6 +316,43 @@ export default function App(){
     };
   },[moveMilestoneToClientX,stopMilestoneDrag]);
 
+  /* Image-note drag */
+  useEffect(()=>{
+    const move=e=>{
+      const d=imgDrag.current;if(!d)return;
+      const rect=cRef.current?.getBoundingClientRect();if(!rect)return;
+      const xPx=e.clientX-rect.left-rail-d.offX;
+      const yPx=e.clientY-rect.top-HEAD-RULER_H-AXIS_H-msH-d.offY+(laneRef.current?.scrollTop||0);
+      const newDate=toDate(xPx);
+      mut(D=>{const n=(D.imageNotes||[]).find(x=>x.id===d.id);if(n){n.date=newDate;n.y=Math.max(20,yPx);}});
+    };
+    const up=()=>{imgDrag.current=null;};
+    window.addEventListener("pointermove",move);
+    window.addEventListener("pointerup",up);
+    return()=>{window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",up);};
+  },[toDate,mut,rail,msH]);
+
+  const onImagePicked=useCallback((file)=>{
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const dataUrl=reader.result;
+      const img=new Image();
+      img.onload=()=>{
+        const max=75;const r=Math.min(max/img.width,max/img.height,1);
+        const w=Math.round(img.width*r),h=Math.round(img.height*r);
+        // place near current view center
+        const wpx=(cRef.current?.offsetWidth||1200)-rail;
+        const date=toDate(wpx/2);
+        const id=uid();
+        mut(D=>{D.imageNotes=D.imageNotes||[];D.imageNotes.push({id,src:dataUrl,date,y:120,w,h});});
+        setImgSel(id);
+      };
+      img.src=dataUrl;
+    };
+    reader.readAsDataURL(file);
+  },[mut,rail,toDate]);
+
   useEffect(()=>{const fn=e=>{
     if(e.key==="z"&&(e.metaKey||e.ctrlKey)&&!e.shiftKey){e.preventDefault();undo();return;}
     if((e.key==="z"&&(e.metaKey||e.ctrlKey)&&e.shiftKey)||(e.key==="y"&&(e.metaKey||e.ctrlKey))){e.preventDefault();redo();return;}
